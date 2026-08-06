@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\AuthController;
+use App\Controllers\BrandController;
 use App\Controllers\CategoryController;
 use App\Controllers\DashboardController;
 use App\Controllers\HomeController;
@@ -78,5 +79,39 @@ $router->post('/categories/delete', [
 ]);
 $router->post('/categories/restore', [
     CategoryController::class,
+    'restore',
+]);
+$router->get('/brands', [
+    BrandController::class,
+    'index',
+]);
+
+$router->get('/brands/create', [
+    BrandController::class,
+    'create',
+]);
+
+$router->post('/brands', [
+    BrandController::class,
+    'store',
+]);
+
+$router->get('/brands/edit', [
+    BrandController::class,
+    'edit',
+]);
+
+$router->post('/brands/update', [
+    BrandController::class,
+    'update',
+]);
+
+$router->post('/brands/delete', [
+    BrandController::class,
+    'delete',
+]);
+
+$router->post('/brands/restore', [
+    BrandController::class,
     'restore',
 ]);
