@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\AuthController;
+use App\Controllers\BrandController;
 use App\Controllers\CategoryController;
 use App\Controllers\DashboardController;
 use App\Controllers\HomeController;
