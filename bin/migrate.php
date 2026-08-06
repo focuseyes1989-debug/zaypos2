@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Config\Database;
-use PDO;
-use Throwable;
 
 require dirname(__DIR__) . '/bootstrap/app.php';
 
@@ -18,7 +16,8 @@ $database->exec(
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
 );
 
-$executed = $database->query('SELECT migration FROM migrations')->fetchAll(PDO::FETCH_COLUMN);
+$executed = $database->query('SELECT migration FROM migrations')
+    ->fetchAll(\PDO::FETCH_COLUMN);
 $executedLookup = array_fill_keys(array_map('strval', $executed), true);
 $files = glob(dirname(__DIR__) . '/database/migrations/*.php') ?: [];
 sort($files, SORT_STRING);
@@ -50,7 +49,7 @@ foreach ($files as $file) {
         );
         $statement->execute(['migration' => $name]);
         $ran++;
-    } catch (Throwable $exception) {
+    } catch (\Throwable $exception) {
         fwrite(STDERR, "FAILED {$name}: {$exception->getMessage()}" . PHP_EOL);
         exit(1);
     }

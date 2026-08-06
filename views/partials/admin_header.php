@@ -16,6 +16,17 @@ use App\Security\Csrf;
         <?php if (in_array('roles.manage', $currentUser['permissions'] ?? [], true)): ?>
             <a href="<?= e(app_url('/roles')) ?>">Roles</a>
         <?php endif; ?>
+        <?php if (
+            in_array(
+                'categories.view',
+                $currentUser['permissions'] ?? [],
+                true
+            )
+        ): ?>
+            <a href="<?= e(app_url('/categories')) ?>">
+                Categories
+            </a>
+        <?php endif; ?>
     </nav>
     <div class="topbar-user">
         <div><strong><?= e($currentUser['full_name']) ?></strong><small><?= e(implode(', ', $currentUser['roles'])) ?></small></div>

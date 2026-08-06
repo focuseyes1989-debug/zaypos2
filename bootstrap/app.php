@@ -26,10 +26,15 @@ $dotenv->required([
 
 date_default_timezone_set($_ENV['APP_TIMEZONE']);
 
-ini_set('session.use_strict_mode', '1');
-ini_set('session.use_only_cookies', '1');
-ini_set('session.cookie_httponly', '1');
-ini_set('session.gc_maxlifetime', (string) ((int) ($_ENV['SESSION_LIFETIME_MINUTES'] ?? 480) * 60));
+if (PHP_SAPI !== 'cli') {
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.cookie_httponly', '1');
+    ini_set(
+        'session.gc_maxlifetime',
+        (string) ((int) ($_ENV['SESSION_LIFETIME_MINUTES'] ?? 480) * 60)
+    );
+}
 
 $logDirectory = BASE_PATH . '/storage/logs';
 if (!is_dir($logDirectory)) {
@@ -54,25 +59,31 @@ set_exception_handler(static function (Throwable $exception) use ($logger): void
     require BASE_PATH . '/views/errors/500.php';
 });
 
-$secureSession = filter_var($_ENV['SESSION_SECURE'] ?? false, FILTER_VALIDATE_BOOL);
+if (PHP_SAPI !== 'cli') {
+    $secureSession = filter_var(
+        $_ENV['SESSION_SECURE'] ?? false,
+        FILTER_VALIDATE_BOOL
+    );
 
-session_name($_ENV['SESSION_NAME'] ?? 'zaypos2_session');
-session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => $secureSession,
-    'httponly' => true,
-    'samesite' => $_ENV['SESSION_SAMESITE'] ?? 'Lax',
-]);
+    session_name($_ENV['SESSION_NAME'] ?? 'zaypos2_session');
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $secureSession,
+        'httponly' => true,
+        'samesite' => $_ENV['SESSION_SAMESITE'] ?? 'Lax',
+    ]);
 
-if (!isset($_SESSION['_started_at'])) {
-    session_regenerate_id(true);
-    $_SESSION['_started_at'] = time();
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        session_start();
+    }
+
+    if (!isset($_SESSION['_started_at'])) {
+        session_regenerate_id(true);
+        $_SESSION['_started_at'] = time();
+    }
 }
 
 return $logger;
