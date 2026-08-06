@@ -1,0 +1,64 @@
+ZAY POS 2.0 - Milestone 1 Setup
+================================
+
+Included
+--------
+- Repeatable database migration runner
+- Company and main branch foundation
+- Users, roles and permissions schema
+- Secure password hashing
+- Login and logout
+- CSRF protection
+- Login rate limiting
+- Database session tracking
+- Audit logs
+- Responsive login and dashboard screens
+
+Install over the existing project
+---------------------------------
+1. Back up C:\UniServerZ\www\zaypos2 and export zay_pos_2 first.
+2. Extract this ZIP. Copy the contents of its zaypos2 folder into:
+   C:\UniServerZ\www\zaypos2
+3. Keep the existing .env and vendor folder. Do not replace or delete them.
+4. In PowerShell run:
+
+   cd C:\UniServerZ\www\zaypos2
+   composer install
+   composer dump-autoload -o
+   php bin\migrate.php
+
+5. Create the first administrator:
+
+   php bin\create-admin.php
+
+   The password is visible while typing in this first setup utility. Run it
+   privately and do not share a screenshot containing the password.
+
+6. Open:
+
+   http://localhost/zaypos2/public/
+
+   LAN clients can use:
+
+   http://192.168.100.130/zaypos2/public/
+
+Expected migration output
+-------------------------
+RUN  202608070001_create_auth_foundation
+Completed 1 migration(s).
+
+The second run should show
+--------------------------
+SKIP 202608070001_create_auth_foundation
+Database is already up to date.
+
+System check
+------------
+http://localhost/zaypos2/public/system-check
+
+Security reminders
+------------------
+- Never upload or share .env.
+- Do not use the MySQL root user in the application.
+- Keep phpMyAdmin local-only.
+- Keep the server restricted to the trusted shop LAN.

@@ -1,0 +1,7 @@
+/.env
+/vendor/
+/storage/logs/*.log
+/.idea/
+/.vscode/
+Thumbs.db
+.DS_Store

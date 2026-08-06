@@ -1,0 +1,31 @@
+{
+  "name": "zaypos/zaypos2",
+  "description": "ZAY POS System 2.0 - LAN-first PHP POS",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3",
+    "ext-pdo": "*",
+    "ext-pdo_mysql": "*",
+    "ext-mbstring": "*",
+    "ext-json": "*",
+    "ext-fileinfo": "*",
+    "vlucas/phpdotenv": "^5.6",
+    "monolog/monolog": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    },
+    "files": [
+      "app/Support/functions.php"
+    ]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "allow-plugins": false
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

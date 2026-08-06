@@ -1,0 +1,56 @@
+ZAY POS 2.0 - Milestone 2 Setup
+================================
+
+Included
+--------
+- User list with search, role/status filters and pagination
+- Create and edit staff accounts
+- Assign branch and one or more roles
+- Enable and disable accounts
+- Reset passwords and invalidate existing sessions
+- Built-in Super Admin, Manager and Cashier roles
+- Create and edit custom roles
+- Permission selection grouped by module
+- Protection against disabling/demoting the final active Super Admin
+- Server-side authorization and CSRF checks on every management action
+- Audit events for user, role, status and password changes
+
+Upgrade
+-------
+1. Back up C:\UniServerZ\www\zaypos2 and export the zay_pos_2 database.
+2. Extract the ZIP to C:\UniServerZ\www and merge the included zaypos2 folder.
+3. Keep the existing .env and vendor folder.
+4. Run in PowerShell:
+
+   cd C:\UniServerZ\www\zaypos2
+   composer install
+   composer dump-autoload -o
+   php bin\migrate.php
+
+Expected new migration
+----------------------
+RUN  202608070002_seed_user_management
+Completed 1 migration(s).
+
+The migration adds the users.password_reset permission, creates Manager and
+Cashier roles, and upgrades the existing Super Admin role.
+
+Test checklist
+--------------
+1. Sign in as Super Admin.
+2. Open Users from the top navigation.
+3. Create a Manager account with the Manager role.
+4. Create a Cashier account with the Cashier role.
+5. Sign in as the Manager and confirm Users is available but Roles is hidden.
+6. Sign in as the Cashier and confirm Users and Roles are hidden.
+7. Reset a test user's password and confirm the old password no longer works.
+8. Disable a test user and confirm that account cannot sign in.
+9. Confirm your own Super Admin account cannot be disabled from the list.
+
+URLs
+----
+Users: http://localhost/zaypos2/public/users
+Roles: http://localhost/zaypos2/public/roles
+LAN:   http://192.168.100.130/zaypos2/public/
+
+Do not share .env, passwords, database exports or storage/logs/app.log.
