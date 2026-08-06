@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use PDO;
-
 return [
     'name' => '202608070001_create_auth_foundation',
-    'up' => static function (PDO $database): void {
+    'up' => static function (\PDO $database): void {
         $statements = [
             <<<'SQL'
 CREATE TABLE IF NOT EXISTS companies (

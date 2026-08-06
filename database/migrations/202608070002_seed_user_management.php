@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use PDO;
-
 return [
     'name' => '202608070002_seed_user_management',
-    'up' => static function (PDO $database): void {
+    'up' => static function (\PDO $database): void {
         $database->exec(
             "INSERT IGNORE INTO permissions (name, code, module, description, created_at)
              VALUES ('Reset User Password', 'users.password_reset', 'users',

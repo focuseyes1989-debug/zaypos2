@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-use PDO;
-
 return [
     'name' => '202608070003_harden_authentication',
-    'up' => static function (PDO $database): void {
+    'up' => static function (\PDO $database): void {
         $database->exec(
             "ALTER TABLE users
              ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER password_changed_at"
