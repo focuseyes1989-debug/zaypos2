@@ -59,6 +59,18 @@ use App\Security\Csrf;
 
         <?php if (
             in_array(
+                'units.view',
+                $currentUser['permissions'] ?? [],
+                true
+            )
+        ): ?>
+            <a href="<?= e(app_url('/units')) ?>">
+                Units
+            </a>
+        <?php endif; ?>
+
+        <?php if (
+            in_array(
                 'brands.view',
                 $currentUser['permissions'] ?? [],
                 true

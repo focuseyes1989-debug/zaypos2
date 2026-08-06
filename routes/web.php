@@ -9,6 +9,7 @@ use App\Controllers\DashboardController;
 use App\Controllers\HomeController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
+use App\Controllers\UnitController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -113,5 +114,40 @@ $router->post('/brands/delete', [
 
 $router->post('/brands/restore', [
     BrandController::class,
+    'restore',
+]);
+
+$router->get('/units', [
+    UnitController::class,
+    'index',
+]);
+
+$router->get('/units/create', [
+    UnitController::class,
+    'create',
+]);
+
+$router->post('/units', [
+    UnitController::class,
+    'store',
+]);
+
+$router->get('/units/edit', [
+    UnitController::class,
+    'edit',
+]);
+
+$router->post('/units/update', [
+    UnitController::class,
+    'update',
+]);
+
+$router->post('/units/delete', [
+    UnitController::class,
+    'delete',
+]);
+
+$router->post('/units/restore', [
+    UnitController::class,
     'restore',
 ]);
