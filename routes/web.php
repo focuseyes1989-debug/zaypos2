@@ -17,6 +17,7 @@ use App\Controllers\TaxController;
 use App\Controllers\ProductController;
 use App\Controllers\InventoryController;
 use App\Controllers\PurchaseController;
+use App\Controllers\PurchasePaymentController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -436,5 +437,35 @@ $router->post('/purchases/delete', [
 
 $router->post('/purchases/restore', [
     PurchaseController::class,
+    'restore',
+]);
+
+$router->get('/purchase-payments', [
+    PurchasePaymentController::class,
+    'index',
+]);
+
+$router->get('/purchase-payments/create', [
+    PurchasePaymentController::class,
+    'create',
+]);
+
+$router->post('/purchase-payments', [
+    PurchasePaymentController::class,
+    'store',
+]);
+
+$router->get('/purchase-payments/history', [
+    PurchasePaymentController::class,
+    'history',
+]);
+
+$router->post('/purchase-payments/delete', [
+    PurchasePaymentController::class,
+    'delete',
+]);
+
+$router->post('/purchase-payments/restore', [
+    PurchasePaymentController::class,
     'restore',
 ]);

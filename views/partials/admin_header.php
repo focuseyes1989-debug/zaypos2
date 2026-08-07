@@ -165,6 +165,18 @@ use App\Security\Csrf;
         </a>
     <?php endif; ?>
 
+    <?php if (
+        in_array(
+            'purchase_payments.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/purchase-payments')) ?>">
+            Purchase Payments
+        </a>
+    <?php endif; ?>
+
 </nav>
 
     <div class="topbar-user">

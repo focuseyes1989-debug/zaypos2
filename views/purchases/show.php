@@ -71,6 +71,49 @@ $permissions = $currentUser['permissions'] ?? [];
                 </a>
             <?php endif; ?>
 
+            <?php if (
+                $purchase->isReceived()
+                && !$purchase->isDeleted()
+                && $purchase->balanceDue() > 0
+                && in_array(
+                    'purchase_payments.create',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="primary-link"
+                    href="<?= e(
+                        app_url(
+                            '/purchase-payments/create?purchase_id='
+                            . $purchase->id()
+                        )
+                    ) ?>"
+                >
+                    Record Payment
+                </a>
+            <?php endif; ?>
+
+            <?php if (
+                in_array(
+                    'purchase_payments.view',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="secondary-link"
+                    href="<?= e(
+                        app_url(
+                            '/purchase-payments/history?purchase_id='
+                            . $purchase->id()
+                        )
+                    ) ?>"
+                >
+                    Payment History
+                </a>
+            <?php endif; ?>
+
             <a
                 class="secondary-link"
                 href="<?= e(app_url('/purchases')) ?>"
@@ -257,6 +300,13 @@ $permissions = $currentUser['permissions'] ?? [];
                 <span class="muted">Paid amount</span>
                 <strong>
                     <?= e(number_format($purchase->paidAmount(), 4)) ?>
+                </strong>
+            </div>
+
+            <div>
+                <span class="muted">Payment status</span>
+                <strong>
+                    <?= e(ucfirst($purchase->paymentStatus())) ?>
                 </strong>
             </div>
 
