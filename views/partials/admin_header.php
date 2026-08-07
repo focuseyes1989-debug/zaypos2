@@ -92,6 +92,18 @@ use App\Security\Csrf;
                 Suppliers
             </a>
         <?php endif; ?>
+    
+    <?php if (
+        in_array(
+            'customers.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/customers')) ?>">
+            Customers
+        </a>
+    <?php endif; ?>    
         
     </nav>
 
