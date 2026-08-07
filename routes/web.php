@@ -18,6 +18,7 @@ use App\Controllers\ProductController;
 use App\Controllers\InventoryController;
 use App\Controllers\PurchaseController;
 use App\Controllers\PurchasePaymentController;
+use App\Controllers\SaleController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -467,5 +468,70 @@ $router->post('/purchase-payments/delete', [
 
 $router->post('/purchase-payments/restore', [
     PurchasePaymentController::class,
+    'restore',
+]);
+
+$router->get('/sales', [
+    SaleController::class,
+    'index',
+]);
+
+$router->get('/sales/show', [
+    SaleController::class,
+    'show',
+]);
+
+$router->get('/sales/create', [
+    SaleController::class,
+    'create',
+]);
+
+$router->post('/sales', [
+    SaleController::class,
+    'store',
+]);
+
+$router->get('/sales/edit', [
+    SaleController::class,
+    'edit',
+]);
+
+$router->post('/sales/update', [
+    SaleController::class,
+    'update',
+]);
+
+$router->post('/sales/items/add', [
+    SaleController::class,
+    'addItem',
+]);
+
+$router->post('/sales/items/update', [
+    SaleController::class,
+    'updateItem',
+]);
+
+$router->post('/sales/items/delete', [
+    SaleController::class,
+    'deleteItem',
+]);
+
+$router->post('/sales/complete', [
+    SaleController::class,
+    'complete',
+]);
+
+$router->post('/sales/cancel', [
+    SaleController::class,
+    'cancel',
+]);
+
+$router->post('/sales/delete', [
+    SaleController::class,
+    'delete',
+]);
+
+$router->post('/sales/restore', [
+    SaleController::class,
     'restore',
 ]);

@@ -123,3 +123,86 @@ td small { display: block; margin-top: 4px; color: #7a879b; }
 .permission-group h3 { margin: 0 0 10px; color: #34445f; font-size: 15px; }
 @media (max-width: 980px) { .topnav { display: none; } .filter-bar { grid-template-columns: 1fr 1fr; } .role-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 640px) { .page-heading { align-items: flex-start; } .filter-bar, .form-grid, .checkbox-grid, .role-grid { grid-template-columns: 1fr; } .field.full { grid-column: auto; } .form-card { padding: 20px; } th, td { padding: 13px; } }
+
+/* =============================================================
+ * Responsive Admin Header Navigation
+ * ============================================================= */
+
+.topbar {
+    height: auto;
+    min-height: 72px;
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.topbar-brand {
+    flex: 0 0 auto;
+}
+
+.topnav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-left: auto;
+    margin-right: 20px;
+    min-width: 0;
+}
+
+.topnav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.topbar-user {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* Medium desktop / laptop */
+@media (max-width: 1400px) {
+    .topbar {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .topnav {
+        gap: 3px;
+        margin-right: 12px;
+    }
+
+    .topnav a {
+        padding: 7px 8px;
+        font-size: 12px;
+    }
+
+    .topbar-user {
+        gap: 8px;
+    }
+}
+
+/* Existing mobile behaviour */
+@media (max-width: 980px) {
+    .topbar {
+        min-height: 72px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .topnav {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .topbar {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
