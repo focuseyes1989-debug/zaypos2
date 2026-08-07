@@ -19,6 +19,7 @@ use App\Controllers\InventoryController;
 use App\Controllers\PurchaseController;
 use App\Controllers\PurchasePaymentController;
 use App\Controllers\SaleController;
+use App\Controllers\SalePaymentController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -533,5 +534,35 @@ $router->post('/sales/delete', [
 
 $router->post('/sales/restore', [
     SaleController::class,
+    'restore',
+]);
+
+$router->get('/sale-payments', [
+    SalePaymentController::class,
+    'index',
+]);
+
+$router->get('/sale-payments/create', [
+    SalePaymentController::class,
+    'create',
+]);
+
+$router->post('/sale-payments', [
+    SalePaymentController::class,
+    'store',
+]);
+
+$router->get('/sale-payments/history', [
+    SalePaymentController::class,
+    'history',
+]);
+
+$router->post('/sale-payments/delete', [
+    SalePaymentController::class,
+    'delete',
+]);
+
+$router->post('/sale-payments/restore', [
+    SalePaymentController::class,
     'restore',
 ]);

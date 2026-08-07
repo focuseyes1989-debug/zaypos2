@@ -79,6 +79,48 @@ require BASE_PATH
                 </a>
             <?php endif; ?>
 
+            <?php if (
+                $sale->status() === 'completed'
+                && $sale->balanceDue() > 0.00005
+                && in_array(
+                    'sale_payments.create',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="primary-link"
+                    href="<?= e(
+                        app_url(
+                            '/sale-payments/create?sale_id='
+                            . $sale->id()
+                        )
+                    ) ?>"
+                >
+                    Record Payment
+                </a>
+            <?php endif; ?>
+
+            <?php if (
+                in_array(
+                    'sale_payments.view',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="secondary-link"
+                    href="<?= e(
+                        app_url(
+                            '/sale-payments/history?sale_id='
+                            . $sale->id()
+                        )
+                    ) ?>"
+                >
+                    Payment History
+                </a>
+            <?php endif; ?>
+
             <a
                 class="secondary-link"
                 href="<?= e(app_url('/sales')) ?>"
