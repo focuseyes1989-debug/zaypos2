@@ -15,6 +15,8 @@ final class Sale extends BaseModel
 
     private int $warehouseId;
 
+    private ?int $posShiftId = null;
+
     private string $saleNumber;
 
     private ?string $customerReference = null;
@@ -80,6 +82,10 @@ final class Sale extends BaseModel
         $this->warehouseId = $this->requiredPositiveInteger(
             $data['warehouse_id'] ?? null,
             'Warehouse ID'
+        );
+
+        $this->posShiftId = $this->nullablePositiveInteger(
+            $data['pos_shift_id'] ?? null
         );
 
         $this->saleNumber = $this->requiredString(
@@ -216,6 +222,11 @@ final class Sale extends BaseModel
     public function warehouseId(): int
     {
         return $this->warehouseId;
+    }
+
+    public function posShiftId(): ?int
+    {
+        return $this->posShiftId;
     }
 
     public function saleNumber(): string
@@ -374,6 +385,7 @@ final class Sale extends BaseModel
             'company_id' => $this->companyId,
             'customer_id' => $this->customerId,
             'warehouse_id' => $this->warehouseId,
+            'pos_shift_id' => $this->posShiftId,
 
             'sale_number' => $this->saleNumber,
             'customer_reference' => $this->customerReference,

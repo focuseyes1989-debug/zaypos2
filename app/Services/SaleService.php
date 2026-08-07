@@ -249,6 +249,10 @@ final class SaleService
             'Warehouse'
         );
 
+        $posShiftId = $this->nullableId(
+            $input['pos_shift_id'] ?? null
+        );
+
         if ($customerId !== null) {
             $this->requireCustomer(
                 $companyId,
@@ -350,6 +354,7 @@ final class SaleService
             'company_id' => $companyId,
             'customer_id' => $customerId,
             'warehouse_id' => $warehouseId,
+            'pos_shift_id' => $posShiftId,
             'sale_number' => $saleNumber,
             'customer_reference' => $customerReference,
             'sale_date' => $saleDate,

@@ -29,7 +29,10 @@ final class PosCheckoutService
             new SaleItemRepository(),
 
         private readonly WarehouseStockRepository $stockRepository =
-            new WarehouseStockRepository()
+            new WarehouseStockRepository(),
+
+        private readonly PosShiftService $shiftService =
+            new PosShiftService()
     ) {
     }
 
@@ -60,6 +63,30 @@ final class PosCheckoutService
                 'Warehouse'
             );
 
+        $shift =
+            $this->shiftService->currentShift(
+                $companyId,
+                $userId
+            );
+
+        if ($shift === null) {
+            throw new ValidationException(
+                'An open POS shift is required before starting a sale.'
+            );
+        }
+
+        if (!$shift->isOpen()) {
+            throw new ValidationException(
+                'The current POS shift is not open.'
+            );
+        }
+
+        if ($shift->warehouseId() !== $warehouseId) {
+            throw new ValidationException(
+                'The POS warehouse must match the current shift warehouse.'
+            );
+        }
+
         return $this->saleService->create(
             $companyId,
             $userId,
@@ -70,6 +97,9 @@ final class PosCheckoutService
 
                 'warehouse_id' =>
                     $warehouseId,
+
+                'pos_shift_id' =>
+                    (int) $shift->id(),
 
                 'sale_number' =>
                     $input['sale_number']
@@ -790,6 +820,42 @@ final class PosCheckoutService
                 $saleId
             );
 
+        $shift =
+            $this->shiftService->currentShift(
+                $companyId,
+                $userId
+            );
+
+        if ($shift === null) {
+            throw new ValidationException(
+                'An open POS shift is required before checkout.'
+            );
+        }
+
+        if (!$shift->isOpen()) {
+            throw new ValidationException(
+                'The current POS shift is not open.'
+            );
+        }
+
+        if ($sale->posShiftId() === null) {
+            throw new ValidationException(
+                'POS sale is not linked to a shift.'
+            );
+        }
+
+        if ((int) $shift->id() !== $sale->posShiftId()) {
+            throw new ValidationException(
+                'POS sale belongs to a different shift.'
+            );
+        }
+
+        if ($shift->warehouseId() !== $sale->warehouseId()) {
+            throw new ValidationException(
+                'POS sale warehouse does not match the current shift warehouse.'
+            );
+        }
+
         if (!$sale->isDraft()) {
             throw new ValidationException(
                 'Only draft POS sales can be checked out.'
@@ -871,6 +937,11 @@ final class PosCheckoutService
                         ]
                     );
         }
+
+        $this->shiftService->recalculate(
+            $companyId,
+            (int) $shift->id()
+        );
 
         return [
             'sale' =>
