@@ -16,6 +16,7 @@ use App\Controllers\WarehouseController;
 use App\Controllers\TaxController;
 use App\Controllers\ProductController;
 use App\Controllers\InventoryController;
+use App\Controllers\PurchaseController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -371,4 +372,69 @@ $router->get('/inventory/transfer', [
 $router->post('/inventory/transfer', [
     InventoryController::class,
     'storeTransfer',
+]);
+
+$router->get('/purchases', [
+    PurchaseController::class,
+    'index',
+]);
+
+$router->get('/purchases/show', [
+    PurchaseController::class,
+    'show',
+]);
+
+$router->get('/purchases/create', [
+    PurchaseController::class,
+    'create',
+]);
+
+$router->post('/purchases', [
+    PurchaseController::class,
+    'store',
+]);
+
+$router->get('/purchases/edit', [
+    PurchaseController::class,
+    'edit',
+]);
+
+$router->post('/purchases/update', [
+    PurchaseController::class,
+    'update',
+]);
+
+$router->post('/purchases/items/add', [
+    PurchaseController::class,
+    'addItem',
+]);
+
+$router->post('/purchases/items/update', [
+    PurchaseController::class,
+    'updateItem',
+]);
+
+$router->post('/purchases/items/delete', [
+    PurchaseController::class,
+    'deleteItem',
+]);
+
+$router->post('/purchases/receive', [
+    PurchaseController::class,
+    'receive',
+]);
+
+$router->post('/purchases/cancel', [
+    PurchaseController::class,
+    'cancel',
+]);
+
+$router->post('/purchases/delete', [
+    PurchaseController::class,
+    'delete',
+]);
+
+$router->post('/purchases/restore', [
+    PurchaseController::class,
+    'restore',
 ]);
