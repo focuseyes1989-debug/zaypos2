@@ -360,6 +360,10 @@ SQL,
     }
 
     /**
+     * Daily POS-only sales summary.
+     *
+     * Only sales linked to a POS shift are included.
+     *
      * @return array<string, mixed>
      */
     public function dailySummary(
@@ -371,19 +375,52 @@ SQL,
                 <<<'SQL'
 SELECT
     COUNT(*) AS sale_count,
-    COALESCE(SUM(subtotal), 0) AS subtotal,
-    COALESCE(SUM(discount_amount), 0) AS discount_amount,
-    COALESCE(SUM(tax_amount), 0) AS tax_amount,
-    COALESCE(SUM(shipping_amount), 0) AS shipping_amount,
-    COALESCE(SUM(other_amount), 0) AS other_amount,
-    COALESCE(SUM(grand_total), 0) AS grand_total,
-    COALESCE(SUM(paid_amount), 0) AS paid_amount,
-    COALESCE(SUM(balance_due), 0) AS balance_due
+
+    COALESCE(
+        SUM(subtotal),
+        0
+    ) AS subtotal,
+
+    COALESCE(
+        SUM(discount_amount),
+        0
+    ) AS discount_amount,
+
+    COALESCE(
+        SUM(tax_amount),
+        0
+    ) AS tax_amount,
+
+    COALESCE(
+        SUM(shipping_amount),
+        0
+    ) AS shipping_amount,
+
+    COALESCE(
+        SUM(other_amount),
+        0
+    ) AS other_amount,
+
+    COALESCE(
+        SUM(grand_total),
+        0
+    ) AS grand_total,
+
+    COALESCE(
+        SUM(paid_amount),
+        0
+    ) AS paid_amount,
+
+    COALESCE(
+        SUM(balance_due),
+        0
+    ) AS balance_due
 
 FROM sales
 
 WHERE company_id = :company_id
   AND sale_date = :sale_date
+  AND pos_shift_id IS NOT NULL
   AND status = 'completed'
   AND deleted_at IS NULL
 SQL,
@@ -407,6 +444,11 @@ SQL,
     }
 
     /**
+     * Daily POS-only payment breakdown.
+     *
+     * Only payments belonging to shift-linked sales
+     * are included.
+     *
      * @return list<array<string, mixed>>
      */
     public function dailyPaymentBreakdown(
@@ -418,7 +460,10 @@ SQL,
 SELECT
     sp.payment_method,
     COUNT(sp.id) AS payment_count,
-    COALESCE(SUM(sp.amount), 0) AS amount
+    COALESCE(
+        SUM(sp.amount),
+        0
+    ) AS amount
 
 FROM sale_payments sp
 
@@ -428,6 +473,7 @@ INNER JOIN sales s
 
 WHERE sp.company_id = :company_id
   AND s.sale_date = :sale_date
+  AND s.pos_shift_id IS NOT NULL
   AND s.status = 'completed'
   AND s.deleted_at IS NULL
   AND sp.deleted_at IS NULL
