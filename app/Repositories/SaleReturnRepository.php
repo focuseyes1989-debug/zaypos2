@@ -694,7 +694,7 @@ final class SaleReturnRepository extends BaseRepository
                 `grand_total` = :grand_total,
                 `refund_balance` =
                     GREATEST(
-                        :grand_total - `refunded_amount`,
+                        :refund_grand_total - `refunded_amount`,
                         0
                     ),
                 `updated_by` = :updated_by,
@@ -715,7 +715,8 @@ final class SaleReturnRepository extends BaseRepository
 
                 'grand_total' =>
                     $grandTotal,
-
+                'refund_grand_total' =>
+                    $grandTotal,
                 'updated_by' =>
                     $userId,
 
