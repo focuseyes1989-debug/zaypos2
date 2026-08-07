@@ -22,6 +22,7 @@ use App\Controllers\SaleController;
 use App\Controllers\SalePaymentController;
 use App\Controllers\SaleReturnController;
 use App\Controllers\PosController;
+use App\Controllers\PosShiftController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -697,4 +698,54 @@ $router->post('/pos/checkout', [
 $router->get('/pos/receipt', [
     PosController::class,
     'receipt',
+]);
+
+$router->get('/pos-shifts', [
+    PosShiftController::class,
+    'index',
+]);
+
+$router->get('/pos-shifts/show', [
+    PosShiftController::class,
+    'show',
+]);
+
+$router->get('/pos-shifts/open', [
+    PosShiftController::class,
+    'create',
+]);
+
+$router->post('/pos-shifts/open', [
+    PosShiftController::class,
+    'store',
+]);
+
+$router->get('/pos-shifts/cash-in', [
+    PosShiftController::class,
+    'cashInForm',
+]);
+
+$router->post('/pos-shifts/cash-in', [
+    PosShiftController::class,
+    'cashIn',
+]);
+
+$router->get('/pos-shifts/cash-out', [
+    PosShiftController::class,
+    'cashOutForm',
+]);
+
+$router->post('/pos-shifts/cash-out', [
+    PosShiftController::class,
+    'cashOut',
+]);
+
+$router->get('/pos-shifts/close', [
+    PosShiftController::class,
+    'closeForm',
+]);
+
+$router->post('/pos-shifts/close', [
+    PosShiftController::class,
+    'close',
 ]);
