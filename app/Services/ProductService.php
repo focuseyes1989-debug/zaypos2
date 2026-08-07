@@ -229,11 +229,13 @@ final class ProductService
 
     /**
      * @param array<string, mixed> $input
+     * @param array<string, mixed>|null $image
      */
     public function create(
         int $companyId,
         int $userId,
-        array $input
+        array $input,
+        ?array $image = null
     ): Product {
         $this->validatePositiveId(
             $companyId,
@@ -250,30 +252,61 @@ final class ProductService
             $input
         );
 
-        $product = $this->repository->create([
-            'company_id' => $companyId,
-            'category_id' => $data['category_id'],
-            'brand_id' => $data['brand_id'],
-            'base_unit_id' => $data['base_unit_id'],
-            'purchase_unit_id' => $data['purchase_unit_id'],
-            'sale_unit_id' => $data['sale_unit_id'],
-            'tax_id' => $data['tax_id'],
-            'name' => $data['name'],
-            'code' => $data['code'],
-            'sku' => $data['sku'],
-            'barcode' => $data['barcode'],
-            'product_type' => $data['product_type'],
-            'purchase_price' => $data['purchase_price'],
-            'sale_price' => $data['sale_price'],
-            'wholesale_price' => $data['wholesale_price'],
-            'track_stock' => $data['track_stock'],
-            'allow_negative_stock' =>
-                $data['allow_negative_stock'],
-            'reorder_level' => $data['reorder_level'],
-            'description' => $data['description'],
-            'status' => $data['status'],
-            'created_by' => $userId,
-        ]);
+        $imagePath = null;
+
+        try {
+            $imagePath = $this->storeProductImage(
+                $image
+            );
+
+            $product = $this->repository->create([
+                'company_id' => $companyId,
+                'category_id' => $data['category_id'],
+                'brand_id' => $data['brand_id'],
+                'base_unit_id' => $data['base_unit_id'],
+                'purchase_unit_id' =>
+                    $data['purchase_unit_id'],
+                'sale_unit_id' =>
+                    $data['sale_unit_id'],
+                'tax_id' => $data['tax_id'],
+
+                'name' => $data['name'],
+                'code' => $data['code'],
+                'sku' => $data['sku'],
+                'barcode' => $data['barcode'],
+                'image_path' => $imagePath,
+
+                'product_type' =>
+                    $data['product_type'],
+
+                'purchase_price' =>
+                    $data['purchase_price'],
+                'sale_price' =>
+                    $data['sale_price'],
+                'wholesale_price' =>
+                    $data['wholesale_price'],
+
+                'track_stock' =>
+                    $data['track_stock'],
+                'allow_negative_stock' =>
+                    $data['allow_negative_stock'],
+                'reorder_level' =>
+                    $data['reorder_level'],
+
+                'description' =>
+                    $data['description'],
+                'status' => $data['status'],
+                'created_by' => $userId,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($imagePath !== null) {
+                $this->deleteProductImage(
+                    $imagePath
+                );
+            }
+
+            throw $exception;
+        }
 
         $this->audit->record(
             'products.created',
@@ -289,12 +322,14 @@ final class ProductService
 
     /**
      * @param array<string, mixed> $input
+     * @param array<string, mixed>|null $image
      */
     public function update(
         int $companyId,
         int $productId,
         int $userId,
-        array $input
+        array $input,
+        ?array $image = null
     ): Product {
         $this->validatePositiveId(
             $companyId,
@@ -322,40 +357,103 @@ final class ProductService
             $productId
         );
 
-        $updated = $this->repository->update(
-            $companyId,
-            $productId,
-            [
-                'category_id' => $data['category_id'],
-                'brand_id' => $data['brand_id'],
-                'base_unit_id' => $data['base_unit_id'],
-                'purchase_unit_id' =>
-                    $data['purchase_unit_id'],
-                'sale_unit_id' => $data['sale_unit_id'],
-                'tax_id' => $data['tax_id'],
-                'name' => $data['name'],
-                'code' => $data['code'],
-                'sku' => $data['sku'],
-                'barcode' => $data['barcode'],
-                'product_type' => $data['product_type'],
-                'purchase_price' =>
-                    $data['purchase_price'],
-                'sale_price' => $data['sale_price'],
-                'wholesale_price' =>
-                    $data['wholesale_price'],
-                'track_stock' => $data['track_stock'],
-                'allow_negative_stock' =>
-                    $data['allow_negative_stock'],
-                'reorder_level' => $data['reorder_level'],
-                'description' => $data['description'],
-                'status' => $data['status'],
-                'updated_by' => $userId,
-            ]
+        $oldImagePath = $existing->imagePath();
+        $newImagePath = $oldImagePath;
+
+        $removeImage = $this->booleanInput(
+            $input['remove_image'] ?? false
         );
 
-        if (!$updated instanceof Product) {
-            throw new ValidationException(
-                'Product could not be updated.'
+        $uploadedImagePath = null;
+
+        try {
+            $uploadedImagePath =
+                $this->storeProductImage(
+                    $image
+                );
+
+            if ($uploadedImagePath !== null) {
+                $newImagePath = $uploadedImagePath;
+            } elseif ($removeImage) {
+                $newImagePath = null;
+            }
+
+            $updated = $this->repository->update(
+                $companyId,
+                $productId,
+                [
+                    'category_id' =>
+                        $data['category_id'],
+                    'brand_id' =>
+                        $data['brand_id'],
+
+                    'base_unit_id' =>
+                        $data['base_unit_id'],
+                    'purchase_unit_id' =>
+                        $data['purchase_unit_id'],
+                    'sale_unit_id' =>
+                        $data['sale_unit_id'],
+                    'tax_id' =>
+                        $data['tax_id'],
+
+                    'name' =>
+                        $data['name'],
+                    'code' =>
+                        $data['code'],
+                    'sku' =>
+                        $data['sku'],
+                    'barcode' =>
+                        $data['barcode'],
+                    'image_path' =>
+                        $newImagePath,
+
+                    'product_type' =>
+                        $data['product_type'],
+
+                    'purchase_price' =>
+                        $data['purchase_price'],
+                    'sale_price' =>
+                        $data['sale_price'],
+                    'wholesale_price' =>
+                        $data['wholesale_price'],
+
+                    'track_stock' =>
+                        $data['track_stock'],
+                    'allow_negative_stock' =>
+                        $data['allow_negative_stock'],
+                    'reorder_level' =>
+                        $data['reorder_level'],
+
+                    'description' =>
+                        $data['description'],
+                    'status' =>
+                        $data['status'],
+                    'updated_by' =>
+                        $userId,
+                ]
+            );
+
+            if (!$updated instanceof Product) {
+                throw new ValidationException(
+                    'Product could not be updated.'
+                );
+            }
+        } catch (\Throwable $exception) {
+            if ($uploadedImagePath !== null) {
+                $this->deleteProductImage(
+                    $uploadedImagePath
+                );
+            }
+
+            throw $exception;
+        }
+
+        if (
+            $oldImagePath !== null
+            && $oldImagePath !== $newImagePath
+        ) {
+            $this->deleteProductImage(
+                $oldImagePath
             );
         }
 
@@ -506,8 +604,10 @@ final class ProductService
             $product->categoryId(),
             $product->brandId(),
             $product->baseUnitId(),
-            $product->purchaseUnitId(),
-            $product->saleUnitId(),
+            $product->purchaseUnitId()
+                ?? $product->baseUnitId(),
+            $product->saleUnitId()
+                ?? $product->baseUnitId(),
             $product->taxId()
         );
 
@@ -523,7 +623,7 @@ final class ProductService
             );
         }
 
-        $product = $this->find(
+        $restoredProduct = $this->find(
             $companyId,
             $productId
         );
@@ -533,11 +633,12 @@ final class ProductService
             'product',
             $productId,
             [
-                'product' => $product->toArray(),
+                'product' =>
+                    $restoredProduct->toArray(),
             ]
         );
 
-        return $product;
+        return $restoredProduct;
     }
 
     /**
@@ -600,7 +701,12 @@ final class ProductService
         );
 
         $status = strtolower(
-            trim((string) ($input['status'] ?? 'active'))
+            trim(
+                (string) (
+                    $input['status']
+                    ?? 'active'
+                )
+            )
         );
 
         $categoryId = $this->nullableId(
@@ -632,9 +738,11 @@ final class ProductService
             $input['track_stock'] ?? false
         );
 
-        $allowNegativeStock = $this->booleanInput(
-            $input['allow_negative_stock'] ?? false
-        );
+        $allowNegativeStock =
+            $this->booleanInput(
+                $input['allow_negative_stock']
+                ?? false
+            );
 
         if ($name === '') {
             throw new ValidationException(
@@ -812,20 +920,33 @@ final class ProductService
             'purchase_unit_id' => $purchaseUnitId,
             'sale_unit_id' => $saleUnitId,
             'tax_id' => $taxId,
+
             'name' => $name,
             'code' => $code,
-            'sku' => $sku === '' ? null : $sku,
-            'barcode' => $barcode === '' ? null : $barcode,
+
+            'sku' => $sku === ''
+                ? null
+                : $sku,
+
+            'barcode' => $barcode === ''
+                ? null
+                : $barcode,
+
             'product_type' => $productType,
+
             'purchase_price' => $purchasePrice,
             'sale_price' => $salePrice,
             'wholesale_price' => $wholesalePrice,
+
             'track_stock' => $trackStock,
-            'allow_negative_stock' => $allowNegativeStock,
+            'allow_negative_stock' =>
+                $allowNegativeStock,
             'reorder_level' => $reorderLevel,
+
             'description' => $description === ''
                 ? null
                 : $description,
+
             'status' => $status,
         ];
     }
@@ -840,10 +961,11 @@ final class ProductService
         ?int $taxId
     ): void {
         if ($categoryId !== null) {
-            $category = $this->categoryRepository->find(
-                $companyId,
-                $categoryId
-            );
+            $category =
+                $this->categoryRepository->find(
+                    $companyId,
+                    $categoryId
+                );
 
             if (
                 !$category instanceof Category
@@ -856,10 +978,11 @@ final class ProductService
         }
 
         if ($brandId !== null) {
-            $brand = $this->brandRepository->find(
-                $companyId,
-                $brandId
-            );
+            $brand =
+                $this->brandRepository->find(
+                    $companyId,
+                    $brandId
+                );
 
             if (
                 !$brand instanceof Brand
@@ -885,10 +1008,11 @@ final class ProductService
             );
         }
 
-        $purchaseUnit = $this->unitRepository->find(
-            $companyId,
-            $purchaseUnitId
-        );
+        $purchaseUnit =
+            $this->unitRepository->find(
+                $companyId,
+                $purchaseUnitId
+            );
 
         if (
             !$purchaseUnit instanceof Unit
@@ -934,7 +1058,10 @@ final class ProductService
         mixed $value,
         string $field
     ): float {
-        if ($value === '' || $value === null) {
+        if (
+            $value === ''
+            || $value === null
+        ) {
             $value = 0;
         }
 
@@ -1005,7 +1132,9 @@ final class ProductService
         mixed $value,
         string $field
     ): int {
-        $id = $this->nullableId($value);
+        $id = $this->nullableId(
+            $value
+        );
 
         if ($id === null) {
             throw new ValidationException(
@@ -1030,7 +1159,12 @@ final class ProductService
         if (is_string($value)) {
             return in_array(
                 strtolower(trim($value)),
-                ['1', 'true', 'yes', 'on'],
+                [
+                    '1',
+                    'true',
+                    'yes',
+                    'on',
+                ],
                 true
             );
         }
@@ -1047,5 +1181,506 @@ final class ProductService
                 "{$field} must be greater than zero."
             );
         }
+    }
+
+    /**
+     * @param array<string, mixed>|null $image
+     */
+    private function storeProductImage(
+        ?array $image
+    ): ?string {
+        if ($image === null) {
+            return null;
+        }
+
+        $error = (int) (
+            $image['error']
+            ?? UPLOAD_ERR_NO_FILE
+        );
+
+        if ($error === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        if ($error !== UPLOAD_ERR_OK) {
+            $message = match ($error) {
+                UPLOAD_ERR_INI_SIZE,
+                UPLOAD_ERR_FORM_SIZE =>
+                    'Product image is too large.',
+
+                UPLOAD_ERR_PARTIAL =>
+                    'Product image upload was incomplete.',
+
+                UPLOAD_ERR_NO_TMP_DIR =>
+                    'Temporary upload directory is unavailable.',
+
+                UPLOAD_ERR_CANT_WRITE =>
+                    'Product image could not be written to disk.',
+
+                UPLOAD_ERR_EXTENSION =>
+                    'Product image upload was stopped by the server.',
+
+                default =>
+                    'Product image upload failed.',
+            };
+
+            throw new ValidationException(
+                $message
+            );
+        }
+
+        $temporaryPath = (string) (
+            $image['tmp_name']
+            ?? ''
+        );
+
+        if (
+            $temporaryPath === ''
+            || !is_uploaded_file(
+                $temporaryPath
+            )
+        ) {
+            throw new ValidationException(
+                'Invalid product image upload.'
+            );
+        }
+
+        $size = (int) (
+            $image['size']
+            ?? 0
+        );
+
+        if ($size < 1) {
+            throw new ValidationException(
+                'Product image is empty.'
+            );
+        }
+
+        /*
+         * Camera images may be large before compression.
+         */
+        if ($size > 15 * 1024 * 1024) {
+            throw new ValidationException(
+                'Product image must not exceed 15 MB.'
+            );
+        }
+
+        if (!class_exists(\finfo::class)) {
+            throw new ValidationException(
+                'The server cannot validate uploaded image types.'
+            );
+        }
+
+        $finfo = new \finfo(
+            FILEINFO_MIME_TYPE
+        );
+
+        $mimeType = $finfo->file(
+            $temporaryPath
+        );
+
+        $allowedTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+
+        if (
+            !is_string($mimeType)
+            || !isset(
+                $allowedTypes[$mimeType]
+            )
+        ) {
+            throw new ValidationException(
+                'Product image must be JPG, PNG or WebP.'
+            );
+        }
+
+        $imageInfo = @getimagesize(
+            $temporaryPath
+        );
+
+        if ($imageInfo === false) {
+            throw new ValidationException(
+                'Uploaded file is not a valid image.'
+            );
+        }
+
+        $width = (int) (
+            $imageInfo[0]
+            ?? 0
+        );
+
+        $height = (int) (
+            $imageInfo[1]
+            ?? 0
+        );
+
+        if (
+            $width < 1
+            || $height < 1
+            || $width > 12000
+            || $height > 12000
+        ) {
+            throw new ValidationException(
+                'Product image dimensions are invalid.'
+            );
+        }
+
+        $sourceImage = match ($mimeType) {
+            'image/jpeg' =>
+                @imagecreatefromjpeg(
+                    $temporaryPath
+                ),
+
+            'image/png' =>
+                @imagecreatefrompng(
+                    $temporaryPath
+                ),
+
+            'image/webp' =>
+                @imagecreatefromwebp(
+                    $temporaryPath
+                ),
+
+            default => false,
+        };
+
+        if ($sourceImage === false) {
+            throw new ValidationException(
+                'Product image could not be decoded.'
+            );
+        }
+
+        try {
+            if ($mimeType === 'image/jpeg') {
+                $sourceImage =
+                    $this->normalizeJpegOrientation(
+                        $temporaryPath,
+                        $sourceImage
+                    );
+            }
+
+            $sourceWidth = imagesx(
+                $sourceImage
+            );
+
+            $sourceHeight = imagesy(
+                $sourceImage
+            );
+
+            if (
+                $sourceWidth < 1
+                || $sourceHeight < 1
+            ) {
+                throw new ValidationException(
+                    'Product image dimensions are invalid.'
+                );
+            }
+
+            /*
+             * Maximum stored dimension:
+             * 1200px on the longest edge.
+             *
+             * Images smaller than 1200px are not enlarged.
+             */
+            $maxDimension = 1200;
+
+            $scale = min(
+                1,
+                $maxDimension / $sourceWidth,
+                $maxDimension / $sourceHeight
+            );
+
+            $targetWidth = max(
+                1,
+                (int) round(
+                    $sourceWidth * $scale
+                )
+            );
+
+            $targetHeight = max(
+                1,
+                (int) round(
+                    $sourceHeight * $scale
+                )
+            );
+
+            $outputImage =
+                imagecreatetruecolor(
+                    $targetWidth,
+                    $targetHeight
+                );
+
+            if ($outputImage === false) {
+                throw new ValidationException(
+                    'Product image could not be resized.'
+                );
+            }
+
+            try {
+                /*
+                 * Keep transparent background for
+                 * PNG and WebP images.
+                 */
+                if (
+                    $mimeType === 'image/png'
+                    || $mimeType === 'image/webp'
+                ) {
+                    imagealphablending(
+                        $outputImage,
+                        false
+                    );
+
+                    imagesavealpha(
+                        $outputImage,
+                        true
+                    );
+
+                    $transparent =
+                        imagecolorallocatealpha(
+                            $outputImage,
+                            0,
+                            0,
+                            0,
+                            127
+                        );
+
+                    imagefilledrectangle(
+                        $outputImage,
+                        0,
+                        0,
+                        $targetWidth,
+                        $targetHeight,
+                        $transparent
+                    );
+                }
+
+                $resized = imagecopyresampled(
+                    $outputImage,
+                    $sourceImage,
+                    0,
+                    0,
+                    0,
+                    0,
+                    $targetWidth,
+                    $targetHeight,
+                    $sourceWidth,
+                    $sourceHeight
+                );
+
+                if (!$resized) {
+                    throw new ValidationException(
+                        'Product image could not be resized.'
+                    );
+                }
+
+                $uploadDirectory =
+                    BASE_PATH
+                    . '/public/uploads/products';
+
+                if (!is_dir($uploadDirectory)) {
+                    $created = @mkdir(
+                        $uploadDirectory,
+                        0775,
+                        true
+                    );
+
+                    if (
+                        !$created
+                        && !is_dir($uploadDirectory)
+                    ) {
+                        throw new ValidationException(
+                            'Product image directory could not be created.'
+                        );
+                    }
+                }
+
+                if (!is_writable($uploadDirectory)) {
+                    throw new ValidationException(
+                        'Product image directory is not writable.'
+                    );
+                }
+
+                try {
+                    $filename =
+                        bin2hex(
+                            random_bytes(20)
+                        )
+                        . '.'
+                        . $allowedTypes[$mimeType];
+                } catch (\Throwable) {
+                    throw new ValidationException(
+                        'Product image filename could not be generated.'
+                    );
+                }
+
+                $destination =
+                    $uploadDirectory
+                    . DIRECTORY_SEPARATOR
+                    . $filename;
+
+                /*
+                 * Compression:
+                 *
+                 * JPEG  = quality 82
+                 * WebP  = quality 82
+                 * PNG   = compression level 6
+                 */
+                $saved = match ($mimeType) {
+                    'image/jpeg' =>
+                        imagejpeg(
+                            $outputImage,
+                            $destination,
+                            82
+                        ),
+
+                    'image/png' =>
+                        imagepng(
+                            $outputImage,
+                            $destination,
+                            6
+                        ),
+
+                    'image/webp' =>
+                        imagewebp(
+                            $outputImage,
+                            $destination,
+                            82
+                        ),
+
+                    default => false,
+                };
+
+                if (!$saved) {
+                    throw new ValidationException(
+                        'Product image could not be saved.'
+                    );
+                }
+
+                return 'uploads/products/'
+                    . $filename;
+            } finally {
+                imagedestroy(
+                    $outputImage
+                );
+            }
+        } finally {
+            imagedestroy(
+                $sourceImage
+            );
+        }
+    }
+
+    private function deleteProductImage(
+        ?string $imagePath
+    ): void {
+        if (
+            $imagePath === null
+            || trim($imagePath) === ''
+        ) {
+            return;
+        }
+
+        $normalizedPath = str_replace(
+            '\\',
+            '/',
+            trim($imagePath)
+        );
+
+        if (
+            !str_starts_with(
+                $normalizedPath,
+                'uploads/products/'
+            )
+        ) {
+            return;
+        }
+
+        $filename = basename(
+            $normalizedPath
+        );
+
+        if (
+            $filename === ''
+            || $filename === '.'
+            || $filename === '..'
+        ) {
+            return;
+        }
+
+        $fullPath =
+            BASE_PATH
+            . '/public/uploads/products/'
+            . $filename;
+
+        if (!is_file($fullPath)) {
+            return;
+        }
+
+        @unlink(
+            $fullPath
+        );
+    }
+
+    /**
+     * Fix phone/camera JPEG orientation when
+     * the EXIF extension is available.
+     */
+    private function normalizeJpegOrientation(
+        string $filePath,
+        \GdImage $image
+    ): \GdImage {
+        if (!function_exists('exif_read_data')) {
+            return $image;
+        }
+
+        $exif = @exif_read_data(
+            $filePath
+        );
+
+        if (!is_array($exif)) {
+            return $image;
+        }
+
+        $orientation = (int) (
+            $exif['Orientation']
+            ?? 1
+        );
+
+        $rotated = match ($orientation) {
+            3 => imagerotate(
+                $image,
+                180,
+                0
+            ),
+
+            6 => imagerotate(
+                $image,
+                -90,
+                0
+            ),
+
+            8 => imagerotate(
+                $image,
+                90,
+                0
+            ),
+
+            default => $image,
+        };
+
+        if (
+            $rotated === false
+            || $rotated === $image
+        ) {
+            return $image;
+        }
+
+        imagedestroy(
+            $image
+        );
+
+        return $rotated;
     }
 }

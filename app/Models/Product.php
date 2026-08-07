@@ -23,6 +23,7 @@ final class Product extends BaseModel
 
     private ?string $sku = null;
     private ?string $barcode = null;
+    private ?string $imagePath = null;
 
     private string $productType = 'stock';
 
@@ -100,6 +101,11 @@ final class Product extends BaseModel
         $this->barcode = $this->nullableString(
             $data['barcode'] ?? null,
             100
+        );
+
+        $this->imagePath = $this->nullableString(
+            $data['image_path'] ?? null,
+            500
         );
 
         $this->productType = $this->validateProductType(
@@ -210,6 +216,17 @@ final class Product extends BaseModel
         return $this->barcode;
     }
 
+    public function imagePath(): ?string
+    {
+        return $this->imagePath;
+    }
+
+    public function hasImage(): bool
+    {
+        return $this->imagePath !== null
+            && $this->imagePath !== '';
+    }
+
     public function productType(): string
     {
         return $this->productType;
@@ -306,6 +323,7 @@ final class Product extends BaseModel
             'code' => $this->code,
             'sku' => $this->sku,
             'barcode' => $this->barcode,
+            'image_path' => $this->imagePath,
 
             'product_type' => $this->productType,
 

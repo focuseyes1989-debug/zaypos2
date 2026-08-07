@@ -30,6 +30,7 @@ final class ProductRepository extends BaseRepository
         'code',
         'sku',
         'barcode',
+        'image_path',
         'product_type',
         'purchase_price',
         'sale_price',
@@ -59,6 +60,7 @@ final class ProductRepository extends BaseRepository
         'code',
         'sku',
         'barcode',
+        'image_path',
         'product_type',
         'purchase_price',
         'sale_price',
@@ -83,6 +85,7 @@ final class ProductRepository extends BaseRepository
         'code',
         'sku',
         'barcode',
+        'image_path',
         'product_type',
         'purchase_price',
         'sale_price',
@@ -228,6 +231,7 @@ final class ProductRepository extends BaseRepository
      *     code: string,
      *     sku: string|null,
      *     barcode: string|null,
+     *     image_path: string|null,
      *     product_type: string,
      *     sale_price: float,
      *     track_stock: bool
@@ -242,6 +246,7 @@ final class ProductRepository extends BaseRepository
                 `code`,
                 `sku`,
                 `barcode`,
+                `image_path`,
                 `product_type`,
                 `sale_price`,
                 `track_stock`
@@ -249,7 +254,9 @@ final class ProductRepository extends BaseRepository
              WHERE `company_id` = :company_id
                AND `status` = 'active'
                AND `deleted_at` IS NULL
-             ORDER BY `name` ASC, `id` ASC",
+             ORDER BY
+                `name` ASC,
+                `id` ASC",
             [
                 'company_id' => $companyId,
             ]
@@ -268,6 +275,9 @@ final class ProductRepository extends BaseRepository
                 'barcode' => $row['barcode'] === null
                     ? null
                     : (string) $row['barcode'],
+                'image_path' => $row['image_path'] === null
+                    ? null
+                    : (string) $row['image_path'],
                 'product_type' => (string) $row['product_type'],
                 'sale_price' => (float) $row['sale_price'],
                 'track_stock' => (bool) $row['track_stock'],
@@ -401,6 +411,7 @@ final class ProductRepository extends BaseRepository
      *     code: string,
      *     sku: string|null,
      *     barcode: string|null,
+     *     image_path: string|null,
      *     product_type: string,
      *     purchase_price: float|int|string,
      *     sale_price: float|int|string,
@@ -428,6 +439,7 @@ final class ProductRepository extends BaseRepository
                 'code' => $data['code'],
                 'sku' => $data['sku'],
                 'barcode' => $data['barcode'],
+                'image_path' => $data['image_path'],
                 'product_type' => $data['product_type'],
                 'purchase_price' => $data['purchase_price'],
                 'sale_price' => $data['sale_price'],
@@ -458,6 +470,7 @@ final class ProductRepository extends BaseRepository
                 `code`,
                 `sku`,
                 `barcode`,
+                `image_path`,
                 `product_type`,
                 `purchase_price`,
                 `sale_price`,
@@ -483,6 +496,7 @@ final class ProductRepository extends BaseRepository
                 :code,
                 :sku,
                 :barcode,
+                :image_path,
                 :product_type,
                 :purchase_price,
                 :sale_price,
@@ -528,6 +542,7 @@ final class ProductRepository extends BaseRepository
      *     code: string,
      *     sku: string|null,
      *     barcode: string|null,
+     *     image_path: string|null,
      *     product_type: string,
      *     purchase_price: float|int|string,
      *     sale_price: float|int|string,
@@ -557,6 +572,7 @@ final class ProductRepository extends BaseRepository
                 'code' => $data['code'],
                 'sku' => $data['sku'],
                 'barcode' => $data['barcode'],
+                'image_path' => $data['image_path'],
                 'product_type' => $data['product_type'],
                 'purchase_price' => $data['purchase_price'],
                 'sale_price' => $data['sale_price'],
@@ -589,6 +605,7 @@ final class ProductRepository extends BaseRepository
                 `code` = :code,
                 `sku` = :sku,
                 `barcode` = :barcode,
+                `image_path` = :image_path,
                 `product_type` = :product_type,
                 `purchase_price` = :purchase_price,
                 `sale_price` = :sale_price,
