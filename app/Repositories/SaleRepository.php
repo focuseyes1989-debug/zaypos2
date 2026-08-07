@@ -22,6 +22,7 @@ final class SaleRepository extends BaseRepository
         'company_id',
         'customer_id',
         'warehouse_id',
+        'pos_shift_id',
         'sale_number',
         'customer_reference',
         'sale_date',
@@ -54,6 +55,7 @@ final class SaleRepository extends BaseRepository
         'company_id',
         'customer_id',
         'warehouse_id',
+        'pos_shift_id',
         'sale_number',
         'customer_reference',
         'sale_date',
@@ -303,6 +305,7 @@ final class SaleRepository extends BaseRepository
                 'company_id' => $data['company_id'],
                 'customer_id' => $data['customer_id'],
                 'warehouse_id' => $data['warehouse_id'],
+                'pos_shift_id' => $data['pos_shift_id'] ?? null,
                 'sale_number' => $data['sale_number'],
                 'customer_reference' => $data['customer_reference'],
                 'sale_date' => $data['sale_date'],
@@ -329,6 +332,7 @@ final class SaleRepository extends BaseRepository
                 `company_id`,
                 `customer_id`,
                 `warehouse_id`,
+                `pos_shift_id`,
                 `sale_number`,
                 `customer_reference`,
                 `sale_date`,
@@ -352,6 +356,7 @@ final class SaleRepository extends BaseRepository
                 :company_id,
                 :customer_id,
                 :warehouse_id,
+                :pos_shift_id,
                 :sale_number,
                 :customer_reference,
                 :sale_date,
@@ -594,6 +599,36 @@ final class SaleRepository extends BaseRepository
         );
 
         return $this->find($companyId, $saleId);
+    }
+
+    public function assignPosShift(
+        int $companyId,
+        int $saleId,
+        ?int $posShiftId,
+        int $userId
+    ): ?Sale {
+        $this->execute(
+            'UPDATE `sales`
+             SET
+                `pos_shift_id` = :pos_shift_id,
+                `updated_by` = :updated_by,
+                `updated_at` = UTC_TIMESTAMP()
+             WHERE `company_id` = :company_id
+               AND `id` = :sale_id
+               AND `status` = \'draft\'
+               AND `deleted_at` IS NULL',
+            [
+                'pos_shift_id' => $posShiftId,
+                'updated_by' => $userId,
+                'company_id' => $companyId,
+                'sale_id' => $saleId,
+            ]
+        );
+
+        return $this->find(
+            $companyId,
+            $saleId
+        );
     }
 
     public function deleteDraft(

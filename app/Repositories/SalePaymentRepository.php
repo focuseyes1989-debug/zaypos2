@@ -563,4 +563,30 @@ final class SalePaymentRepository extends BaseRepository
             ]
         );
     }
+
+    public function sumCashPaymentsByShift(
+        int $companyId,
+        int $shiftId
+    ): float {
+        return (float) $this->fetchValue(
+            "SELECT COALESCE(
+                SUM(sp.`amount`),
+                0
+             )
+             FROM `sale_payments` sp
+             INNER JOIN `sales` s
+                ON s.`id` = sp.`sale_id`
+               AND s.`company_id` = sp.`company_id`
+             WHERE sp.`company_id` = :company_id
+               AND s.`pos_shift_id` = :shift_id
+               AND s.`status` = 'completed'
+               AND s.`deleted_at` IS NULL
+               AND sp.`payment_method` = 'cash'
+               AND sp.`deleted_at` IS NULL",
+            [
+                'company_id' => $companyId,
+                'shift_id' => $shiftId,
+            ]
+        );
+    }
 }
