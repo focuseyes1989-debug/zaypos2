@@ -201,6 +201,18 @@ use App\Security\Csrf;
         </a>
     <?php endif; ?>
 
+    <?php if (
+        in_array(
+            'sale_returns.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/sale-returns')) ?>">
+            Sale Returns
+        </a>
+    <?php endif; ?>
+
 </nav>
 
     <div class="topbar-user">

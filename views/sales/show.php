@@ -121,6 +121,48 @@ require BASE_PATH
                 </a>
             <?php endif; ?>
 
+            <?php if (
+                $sale->status() === 'completed'
+                && !$sale->isDeleted()
+                && in_array(
+                    'sale_returns.create',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="primary-link"
+                    href="<?= e(
+                        app_url(
+                            '/sale-returns/create?sale_id='
+                            . $sale->id()
+                        )
+                    ) ?>"
+                >
+                    Create Return
+                </a>
+            <?php endif; ?>
+
+            <?php if (
+                in_array(
+                    'sale_returns.view',
+                    $permissions,
+                    true
+                )
+            ): ?>
+                <a
+                    class="secondary-link"
+                    href="<?= e(
+                        app_url(
+                            '/sale-returns?sale_id='
+                            . $sale->id()
+                        )
+                    ) ?>"
+                >
+                    Return History
+                </a>
+            <?php endif; ?>
+
             <a
                 class="secondary-link"
                 href="<?= e(app_url('/sales')) ?>"

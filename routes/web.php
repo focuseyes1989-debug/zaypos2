@@ -20,6 +20,7 @@ use App\Controllers\PurchaseController;
 use App\Controllers\PurchasePaymentController;
 use App\Controllers\SaleController;
 use App\Controllers\SalePaymentController;
+use App\Controllers\SaleReturnController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -565,4 +566,94 @@ $router->post('/sale-payments/delete', [
 $router->post('/sale-payments/restore', [
     SalePaymentController::class,
     'restore',
+]);
+
+$router->get('/sale-returns', [
+    SaleReturnController::class,
+    'index',
+]);
+
+$router->get('/sale-returns/show', [
+    SaleReturnController::class,
+    'show',
+]);
+
+$router->get('/sale-returns/create', [
+    SaleReturnController::class,
+    'create',
+]);
+
+$router->post('/sale-returns', [
+    SaleReturnController::class,
+    'store',
+]);
+
+$router->get('/sale-returns/edit', [
+    SaleReturnController::class,
+    'edit',
+]);
+
+$router->post('/sale-returns/update', [
+    SaleReturnController::class,
+    'update',
+]);
+
+$router->post('/sale-returns/items/add', [
+    SaleReturnController::class,
+    'addItem',
+]);
+
+$router->post('/sale-returns/items/update', [
+    SaleReturnController::class,
+    'updateItem',
+]);
+
+$router->post('/sale-returns/items/delete', [
+    SaleReturnController::class,
+    'deleteItem',
+]);
+
+$router->post('/sale-returns/complete', [
+    SaleReturnController::class,
+    'complete',
+]);
+
+$router->post('/sale-returns/cancel', [
+    SaleReturnController::class,
+    'cancel',
+]);
+
+$router->post('/sale-returns/delete', [
+    SaleReturnController::class,
+    'delete',
+]);
+
+$router->post('/sale-returns/restore', [
+    SaleReturnController::class,
+    'restore',
+]);
+
+$router->get('/sale-returns/refund', [
+    SaleReturnController::class,
+    'refund',
+]);
+
+$router->post('/sale-returns/refund', [
+    SaleReturnController::class,
+    'storeRefund',
+]);
+
+$router->get('/sale-returns/refund-history', [
+    SaleReturnController::class,
+    'refundHistory',
+]);
+
+$router->post('/sale-returns/refunds/delete', [
+    SaleReturnController::class,
+    'deleteRefund',
+]);
+
+$router->post('/sale-returns/refunds/restore', [
+    SaleReturnController::class,
+    'restoreRefund',
 ]);
