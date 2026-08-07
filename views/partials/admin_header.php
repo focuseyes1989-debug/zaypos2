@@ -117,7 +117,19 @@ use App\Security\Csrf;
         </a>
     <?php endif; ?>
 
-    </nav>
+    <?php if (
+        in_array(
+            'taxes.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/taxes')) ?>">
+            Taxes
+        </a>
+    <?php endif; ?>
+
+</nav>
 
     <div class="topbar-user">
         <div>
