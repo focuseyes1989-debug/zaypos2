@@ -213,6 +213,18 @@ use App\Security\Csrf;
         </a>
     <?php endif; ?>
 
+    <?php if (
+        in_array(
+            'pos.access',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/pos')) ?>">
+            POS
+        </a>
+    <?php endif; ?>
+
 </nav>
 
     <div class="topbar-user">

@@ -21,6 +21,7 @@ use App\Controllers\PurchasePaymentController;
 use App\Controllers\SaleController;
 use App\Controllers\SalePaymentController;
 use App\Controllers\SaleReturnController;
+use App\Controllers\PosController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -656,4 +657,44 @@ $router->post('/sale-returns/refunds/delete', [
 $router->post('/sale-returns/refunds/restore', [
     SaleReturnController::class,
     'restoreRefund',
+]);
+
+$router->get('/pos', [
+    PosController::class,
+    'index',
+]);
+
+$router->post('/pos/start', [
+    PosController::class,
+    'start',
+]);
+
+$router->post('/pos/scan', [
+    PosController::class,
+    'scan',
+]);
+
+$router->post('/pos/add-product', [
+    PosController::class,
+    'addProduct',
+]);
+
+$router->post('/pos/item/update', [
+    PosController::class,
+    'updateItem',
+]);
+
+$router->post('/pos/item/remove', [
+    PosController::class,
+    'removeItem',
+]);
+
+$router->post('/pos/checkout', [
+    PosController::class,
+    'checkout',
+]);
+
+$router->get('/pos/receipt', [
+    PosController::class,
+    'receipt',
 ]);
