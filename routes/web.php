@@ -11,6 +11,7 @@ use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\UnitController;
 use App\Controllers\SupplierController;
+use App\Controllers\CustomerController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -185,5 +186,40 @@ $router->post('/suppliers/delete', [
 
 $router->post('/suppliers/restore', [
     SupplierController::class,
+    'restore',
+]);
+
+$router->get('/customers', [
+    CustomerController::class,
+    'index',
+]);
+
+$router->get('/customers/create', [
+    CustomerController::class,
+    'create',
+]);
+
+$router->post('/customers', [
+    CustomerController::class,
+    'store',
+]);
+
+$router->get('/customers/edit', [
+    CustomerController::class,
+    'edit',
+]);
+
+$router->post('/customers/update', [
+    CustomerController::class,
+    'update',
+]);
+
+$router->post('/customers/delete', [
+    CustomerController::class,
+    'delete',
+]);
+
+$router->post('/customers/restore', [
+    CustomerController::class,
     'restore',
 ]);
