@@ -439,16 +439,16 @@ final class PurchasePaymentRepository extends BaseRepository
         int $paymentId,
         int $userId
     ): bool {
-        $affected = $this->execute(
+        $statement = $this->execute(
             'UPDATE `purchase_payments`
-             SET
+            SET
                 `deleted_at` = UTC_TIMESTAMP(),
                 `deleted_by` = :deleted_by,
                 `updated_by` = :updated_by,
                 `updated_at` = UTC_TIMESTAMP()
-             WHERE `company_id` = :company_id
-               AND `id` = :payment_id
-               AND `deleted_at` IS NULL',
+            WHERE `company_id` = :company_id
+            AND `id` = :payment_id
+            AND `deleted_at` IS NULL',
             [
                 'deleted_by' => $userId,
                 'updated_by' => $userId,
@@ -457,7 +457,7 @@ final class PurchasePaymentRepository extends BaseRepository
             ]
         );
 
-        return $affected > 0;
+        return $statement->rowCount() > 0;
     }
 
     public function restore(
@@ -465,16 +465,16 @@ final class PurchasePaymentRepository extends BaseRepository
         int $paymentId,
         int $userId
     ): bool {
-        $affected = $this->execute(
+        $statement = $this->execute(
             'UPDATE `purchase_payments`
-             SET
+            SET
                 `deleted_at` = NULL,
                 `deleted_by` = NULL,
                 `updated_by` = :updated_by,
                 `updated_at` = UTC_TIMESTAMP()
-             WHERE `company_id` = :company_id
-               AND `id` = :payment_id
-               AND `deleted_at` IS NOT NULL',
+            WHERE `company_id` = :company_id
+            AND `id` = :payment_id
+            AND `deleted_at` IS NOT NULL',
             [
                 'updated_by' => $userId,
                 'company_id' => $companyId,
@@ -482,9 +482,9 @@ final class PurchasePaymentRepository extends BaseRepository
             ]
         );
 
-        return $affected > 0;
+        return $statement->rowCount() > 0;
     }
-
+    
     public function sumActivePayments(
         int $companyId,
         int $purchaseId
