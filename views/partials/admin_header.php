@@ -80,6 +80,19 @@ use App\Security\Csrf;
                 Brands
             </a>
         <?php endif; ?>
+
+        <?php if (
+            in_array(
+                'suppliers.view',
+                $currentUser['permissions'] ?? [],
+                true
+            )
+        ): ?>
+            <a href="<?= e(app_url('/suppliers')) ?>">
+                Suppliers
+            </a>
+        <?php endif; ?>
+        
     </nav>
 
     <div class="topbar-user">

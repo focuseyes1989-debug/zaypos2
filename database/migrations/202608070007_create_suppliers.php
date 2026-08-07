@@ -1,0 +1,180 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'name' => '202608070007_create_suppliers',
+
+    'up' => static function (\PDO $database): void {
+        $database->exec(
+            <<<'SQL'
+CREATE TABLE IF NOT EXISTS suppliers (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    company_id BIGINT UNSIGNED NOT NULL,
+
+    name VARCHAR(160) NOT NULL,
+    code VARCHAR(80) NOT NULL,
+    contact_person VARCHAR(160) NULL,
+
+    phone VARCHAR(50) NULL,
+    email VARCHAR(190) NULL,
+    address VARCHAR(500) NULL,
+    tax_number VARCHAR(100) NULL,
+
+    payment_terms_days SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    credit_limit DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+    opening_balance DECIMAL(18, 2) NOT NULL DEFAULT 0.00,
+
+    notes TEXT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'active',
+
+    created_by BIGINT UNSIGNED NULL,
+    updated_by BIGINT UNSIGNED NULL,
+    deleted_by BIGINT UNSIGNED NULL,
+
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    deleted_at DATETIME NULL,
+
+    CONSTRAINT fk_suppliers_company
+        FOREIGN KEY (company_id)
+        REFERENCES companies(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_suppliers_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_suppliers_updated_by
+        FOREIGN KEY (updated_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    CONSTRAINT fk_suppliers_deleted_by
+        FOREIGN KEY (deleted_by)
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    UNIQUE KEY uq_suppliers_company_code (
+        company_id,
+        code
+    ),
+
+    KEY idx_suppliers_company_name (
+        company_id,
+        name
+    ),
+
+    KEY idx_suppliers_company_status (
+        company_id,
+        status
+    ),
+
+    KEY idx_suppliers_phone (
+        phone
+    ),
+
+    KEY idx_suppliers_email (
+        email
+    ),
+
+    KEY idx_suppliers_deleted_at (
+        deleted_at
+    )
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci
+SQL
+        );
+
+        $permissions = [
+            [
+                'name' => 'View Suppliers',
+                'code' => 'suppliers.view',
+                'description' => 'View supplier records',
+            ],
+            [
+                'name' => 'Create Suppliers',
+                'code' => 'suppliers.create',
+                'description' => 'Create supplier records',
+            ],
+            [
+                'name' => 'Update Suppliers',
+                'code' => 'suppliers.update',
+                'description' => 'Update supplier records',
+            ],
+            [
+                'name' => 'Delete Suppliers',
+                'code' => 'suppliers.delete',
+                'description' => 'Soft-delete supplier records',
+            ],
+            [
+                'name' => 'Restore Suppliers',
+                'code' => 'suppliers.restore',
+                'description' => 'Restore deleted supplier records',
+            ],
+        ];
+
+        $permissionStatement = $database->prepare(
+            'INSERT IGNORE INTO permissions (
+                name,
+                code,
+                module,
+                description,
+                created_at
+             ) VALUES (
+                :name,
+                :code,
+                :module,
+                :description,
+                UTC_TIMESTAMP()
+             )'
+        );
+
+        foreach ($permissions as $permission) {
+            $permissionStatement->execute([
+                'name' => $permission['name'],
+                'code' => $permission['code'],
+                'module' => 'suppliers',
+                'description' => $permission['description'],
+            ]);
+        }
+
+        $database->exec(
+            "INSERT IGNORE INTO role_permissions (
+                role_id,
+                permission_id,
+                created_at
+             )
+             SELECT
+                r.id,
+                p.id,
+                UTC_TIMESTAMP()
+             FROM roles r
+             CROSS JOIN permissions p
+             WHERE r.code = 'super_admin'
+               AND p.module = 'suppliers'"
+        );
+
+        $database->exec(
+            "INSERT IGNORE INTO role_permissions (
+                role_id,
+                permission_id,
+                created_at
+             )
+             SELECT
+                r.id,
+                p.id,
+                UTC_TIMESTAMP()
+             FROM roles r
+             INNER JOIN permissions p
+                 ON p.code IN (
+                     'suppliers.view',
+                     'suppliers.create',
+                     'suppliers.update'
+                 )
+             WHERE r.code = 'manager'"
+        );
+    },
+];
