@@ -23,6 +23,7 @@ use App\Controllers\SalePaymentController;
 use App\Controllers\SaleReturnController;
 use App\Controllers\PosController;
 use App\Controllers\PosShiftController;
+use App\Controllers\PosRegisterReportController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -748,4 +749,25 @@ $router->get('/pos-shifts/close', [
 $router->post('/pos-shifts/close', [
     PosShiftController::class,
     'close',
+]);
+
+/*
+|--------------------------------------------------------------------------
+| POS Register Reports
+|--------------------------------------------------------------------------
+*/
+
+$router->get('/pos-reports', [
+    PosRegisterReportController::class,
+    'index',
+]);
+
+$router->get('/pos-reports/shift', [
+    PosRegisterReportController::class,
+    'shift',
+]);
+
+$router->get('/pos-reports/shift/print', [
+    PosRegisterReportController::class,
+    'printShift',
 ]);
