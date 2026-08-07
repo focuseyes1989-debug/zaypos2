@@ -4,68 +4,70 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Exceptions\ValidationException;
 use DateTimeImmutable;
+use InvalidArgumentException;
 
-final class SalePayment
+final class SalePayment extends BaseModel
 {
-    private ?int $id;
+    private ?int $companyId = null;
 
-    private int $companyId;
+    private ?int $saleId = null;
 
-    private int $saleId;
+    private ?int $customerId = null;
 
-    private ?int $customerId;
+    private string $paymentNumber = '';
 
-    private string $paymentNumber;
+    private ?DateTimeImmutable $paymentDate = null;
 
-    private DateTimeImmutable $paymentDate;
+    private float $amount = 0.0;
 
-    private float $amount;
+    private string $paymentMethod = 'cash';
 
-    private string $paymentMethod;
+    private ?string $referenceNumber = null;
 
-    private ?string $referenceNumber;
+    private ?string $notes = null;
 
-    private ?string $notes;
+    private ?int $createdBy = null;
 
-    private ?int $createdBy;
+    private ?int $updatedBy = null;
 
-    private ?int $updatedBy;
-
-    private ?int $deletedBy;
-
-    private ?DateTimeImmutable $createdAt;
-
-    private ?DateTimeImmutable $updatedAt;
-
-    private ?DateTimeImmutable $deletedAt;
+    private ?int $deletedBy = null;
 
     /**
      * @param array<string, mixed> $data
      */
-    public function __construct(array $data)
+    public function __construct(array $data = [])
     {
-        $this->id = $this->nullablePositiveInteger(
-            $data['id'] ?? null
-        );
+        if ($data !== []) {
+            $this->fill($data);
+        }
+    }
 
-        $this->companyId = $this->requiredPositiveInteger(
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function fill(array $data): self
+    {
+        $this->fillBaseAttributes($data);
+
+        $this->companyId = $this->positiveInteger(
             $data['company_id'] ?? null,
             'Company ID'
         );
 
-        $this->saleId = $this->requiredPositiveInteger(
+        $this->saleId = $this->positiveInteger(
             $data['sale_id'] ?? null,
             'Sale ID'
         );
 
-        $this->customerId = $this->nullablePositiveInteger(
-            $data['customer_id'] ?? null
-        );
+        $this->customerId =
+            $this->optionalPositiveInteger(
+                $data['customer_id'] ?? null,
+                'Customer ID'
+            );
 
         $this->paymentNumber = $this->requiredString(
-            $data['payment_number'] ?? null,
+            $data['payment_number'] ?? '',
             'Payment number',
             100
         );
@@ -76,59 +78,64 @@ final class SalePayment
         );
 
         $this->amount = $this->positiveAmount(
-            $data['amount'] ?? null
+            $data['amount'] ?? 0
         );
 
-        $this->paymentMethod = $this->normalizePaymentMethod(
-            $data['payment_method'] ?? 'cash'
-        );
+        $this->paymentMethod =
+            $this->normalizePaymentMethod(
+                $data['payment_method'] ?? 'cash'
+            );
 
-        $this->referenceNumber = $this->nullableString(
-            $data['reference_number'] ?? null,
-            190
-        );
+        $this->referenceNumber =
+            $this->optionalString(
+                $data['reference_number'] ?? null,
+                190
+            );
 
-        $this->notes = $this->nullableText(
+        $this->notes = $this->optionalString(
             $data['notes'] ?? null
         );
 
-        $this->createdBy = $this->nullablePositiveInteger(
-            $data['created_by'] ?? null
-        );
+        $this->createdBy =
+            $this->optionalPositiveInteger(
+                $data['created_by'] ?? null,
+                'Created by'
+            );
 
-        $this->updatedBy = $this->nullablePositiveInteger(
-            $data['updated_by'] ?? null
-        );
+        $this->updatedBy =
+            $this->optionalPositiveInteger(
+                $data['updated_by'] ?? null,
+                'Updated by'
+            );
 
-        $this->deletedBy = $this->nullablePositiveInteger(
-            $data['deleted_by'] ?? null
-        );
+        $this->deletedBy =
+            $this->optionalPositiveInteger(
+                $data['deleted_by'] ?? null,
+                'Deleted by'
+            );
 
-        $this->createdAt = $this->nullableDateTime(
-            $data['created_at'] ?? null
-        );
-
-        $this->updatedAt = $this->nullableDateTime(
-            $data['updated_at'] ?? null
-        );
-
-        $this->deletedAt = $this->nullableDateTime(
-            $data['deleted_at'] ?? null
-        );
-    }
-
-    public function id(): ?int
-    {
-        return $this->id;
+        return $this;
     }
 
     public function companyId(): int
     {
+        if ($this->companyId === null) {
+            throw new InvalidArgumentException(
+                'Company ID is not available.'
+            );
+        }
+
         return $this->companyId;
     }
 
     public function saleId(): int
     {
+        if ($this->saleId === null) {
+            throw new InvalidArgumentException(
+                'Sale ID is not available.'
+            );
+        }
+
         return $this->saleId;
     }
 
@@ -144,6 +151,12 @@ final class SalePayment
 
     public function paymentDate(): DateTimeImmutable
     {
+        if ($this->paymentDate === null) {
+            throw new InvalidArgumentException(
+                'Payment date is not available.'
+            );
+        }
+
         return $this->paymentDate;
     }
 
@@ -182,24 +195,67 @@ final class SalePayment
         return $this->deletedBy;
     }
 
-    public function createdAt(): ?DateTimeImmutable
+    public function isCash(): bool
     {
-        return $this->createdAt;
+        return $this->paymentMethod === 'cash';
     }
 
-    public function updatedAt(): ?DateTimeImmutable
+    public function isBankTransfer(): bool
     {
-        return $this->updatedAt;
+        return $this->paymentMethod === 'bank_transfer';
     }
 
-    public function deletedAt(): ?DateTimeImmutable
+    public function isCard(): bool
     {
-        return $this->deletedAt;
+        return $this->paymentMethod === 'card';
     }
 
-    public function isDeleted(): bool
+    public function isMobilePayment(): bool
     {
-        return $this->deletedAt !== null;
+        return $this->paymentMethod === 'mobile_payment';
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function paymentMethods(): array
+    {
+        return [
+            'cash',
+            'bank_transfer',
+            'card',
+            'mobile_payment',
+            'cheque',
+            'other',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function paymentMethodOptions(): array
+    {
+        return [
+            'cash' => 'Cash',
+            'bank_transfer' => 'Bank Transfer',
+            'card' => 'Card',
+            'mobile_payment' => 'Mobile Payment',
+            'cheque' => 'Cheque',
+            'other' => 'Other',
+        ];
+    }
+
+    public function paymentMethodLabel(): string
+    {
+        return self::paymentMethodOptions()[
+            $this->paymentMethod
+        ] ?? ucfirst(
+            str_replace(
+                '_',
+                ' ',
+                $this->paymentMethod
+            )
+        );
     }
 
     /**
@@ -208,17 +264,21 @@ final class SalePayment
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
+            'id' => $this->id(),
+
             'company_id' => $this->companyId,
+
             'sale_id' => $this->saleId,
+
             'customer_id' => $this->customerId,
 
             'payment_number' =>
                 $this->paymentNumber,
 
             'payment_date' =>
-                $this->paymentDate
-                    ->format('Y-m-d'),
+                $this->paymentDate?->format(
+                    'Y-m-d'
+                ),
 
             'amount' => $this->amount,
 
@@ -231,49 +291,57 @@ final class SalePayment
             'notes' => $this->notes,
 
             'created_by' => $this->createdBy,
+
             'updated_by' => $this->updatedBy,
+
             'deleted_by' => $this->deletedBy,
 
             'created_at' =>
-                $this->createdAt
-                    ?->format(
-                        'Y-m-d H:i:s'
-                    ),
+                $this->createdAt()?->format(
+                    'Y-m-d H:i:s'
+                ),
 
             'updated_at' =>
-                $this->updatedAt
-                    ?->format(
-                        'Y-m-d H:i:s'
-                    ),
+                $this->updatedAt()?->format(
+                    'Y-m-d H:i:s'
+                ),
 
             'deleted_at' =>
-                $this->deletedAt
-                    ?->format(
-                        'Y-m-d H:i:s'
-                    ),
+                $this->deletedAt()?->format(
+                    'Y-m-d H:i:s'
+                ),
         ];
     }
 
-    private function requiredPositiveInteger(
+    private function positiveInteger(
         mixed $value,
-        string $field
+        string $label
     ): int {
-        $integer =
-            $this->nullablePositiveInteger(
-                $value
+        if (
+            $value === null
+            || $value === ''
+            || !is_numeric($value)
+        ) {
+            throw new InvalidArgumentException(
+                $label . ' is required.'
             );
+        }
 
-        if ($integer === null) {
-            throw new ValidationException(
-                "{$field} is required."
+        $integer = (int) $value;
+
+        if ($integer < 1) {
+            throw new InvalidArgumentException(
+                $label
+                . ' must be greater than zero.'
             );
         }
 
         return $integer;
     }
 
-    private function nullablePositiveInteger(
-        mixed $value
+    private function optionalPositiveInteger(
+        mixed $value,
+        string $label
     ): ?int {
         if (
             $value === null
@@ -282,56 +350,63 @@ final class SalePayment
             return null;
         }
 
-        if (
-            is_int($value)
-            && $value > 0
-        ) {
-            return $value;
+        if (!is_numeric($value)) {
+            throw new InvalidArgumentException(
+                $label
+                . ' must be a valid identifier.'
+            );
         }
 
-        if (
-            is_string($value)
-            && ctype_digit($value)
-            && (int) $value > 0
-        ) {
-            return (int) $value;
+        $integer = (int) $value;
+
+        if ($integer < 1) {
+            throw new InvalidArgumentException(
+                $label
+                . ' must be greater than zero.'
+            );
         }
 
-        if (
-            is_float($value)
-            && floor($value) === $value
-            && $value > 0
-        ) {
-            return (int) $value;
-        }
-
-        throw new ValidationException(
-            'Expected a positive integer.'
-        );
+        return $integer;
     }
 
     private function requiredString(
         mixed $value,
-        string $field,
-        int $maximumLength
+        string $label,
+        ?int $maximumLength = null
     ): string {
-        $string = $this->nullableString(
-            $value,
-            $maximumLength
-        );
-
-        if ($string === null) {
-            throw new ValidationException(
-                "{$field} is required."
+        if (!is_string($value)) {
+            throw new InvalidArgumentException(
+                $label . ' is required.'
             );
         }
 
-        return $string;
+        $value = trim($value);
+
+        if ($value === '') {
+            throw new InvalidArgumentException(
+                $label . ' is required.'
+            );
+        }
+
+        if (
+            $maximumLength !== null
+            && mb_strlen($value)
+                > $maximumLength
+        ) {
+            throw new InvalidArgumentException(
+                $label
+                . ' must not exceed '
+                . $maximumLength
+                . ' characters.'
+            );
+        }
+
+        return $value;
     }
 
-    private function nullableString(
+    private function optionalString(
         mixed $value,
-        int $maximumLength
+        ?int $maximumLength = null
     ): ?string {
         if (
             $value === null
@@ -340,163 +415,56 @@ final class SalePayment
             return null;
         }
 
-        if (!is_scalar($value)) {
-            throw new ValidationException(
-                'Expected a text value.'
+        if (!is_string($value)) {
+            throw new InvalidArgumentException(
+                'Expected a valid string.'
             );
         }
 
-        $string = trim(
-            (string) $value
-        );
+        $value = trim($value);
 
-        if ($string === '') {
+        if ($value === '') {
             return null;
         }
 
         if (
-            mb_strlen($string)
-            > $maximumLength
+            $maximumLength !== null
+            && mb_strlen($value)
+                > $maximumLength
         ) {
-            throw new ValidationException(
-                "Text must not exceed {$maximumLength} characters."
+            throw new InvalidArgumentException(
+                'Value must not exceed '
+                . $maximumLength
+                . ' characters.'
             );
         }
 
-        return $string;
-    }
-
-    private function nullableText(
-        mixed $value
-    ): ?string {
-        if (
-            $value === null
-            || $value === ''
-        ) {
-            return null;
-        }
-
-        if (!is_scalar($value)) {
-            throw new ValidationException(
-                'Expected a text value.'
-            );
-        }
-
-        $text = trim(
-            (string) $value
-        );
-
-        return $text === ''
-            ? null
-            : $text;
-    }
-
-    private function positiveAmount(
-        mixed $value
-    ): float {
-        if (!is_numeric($value)) {
-            throw new ValidationException(
-                'Payment amount must be a valid number.'
-            );
-        }
-
-        $amount = round(
-            (float) $value,
-            4
-        );
-
-        if (
-            !is_finite($amount)
-            || $amount <= 0
-        ) {
-            throw new ValidationException(
-                'Payment amount must be greater than zero.'
-            );
-        }
-
-        return $amount;
-    }
-
-    private function normalizePaymentMethod(
-        mixed $value
-    ): string {
-        if (!is_scalar($value)) {
-            throw new ValidationException(
-                'Payment method is invalid.'
-            );
-        }
-
-        $method = strtolower(
-            trim((string) $value)
-        );
-
-        $allowed = [
-            'cash',
-            'card',
-            'bank_transfer',
-            'mobile_payment',
-            'cheque',
-            'other',
-        ];
-
-        if (
-            !in_array(
-                $method,
-                $allowed,
-                true
-            )
-        ) {
-            throw new ValidationException(
-                'Invalid payment method.'
-            );
-        }
-
-        return $method;
+        return $value;
     }
 
     private function requiredDate(
         mixed $value,
-        string $field
+        string $label
     ): DateTimeImmutable {
-        $date = $this->nullableDate(
-            $value,
-            $field
-        );
-
-        if ($date === null) {
-            throw new ValidationException(
-                "{$field} is required."
-            );
-        }
-
-        return $date;
-    }
-
-    private function nullableDate(
-        mixed $value,
-        string $field
-    ): ?DateTimeImmutable {
-        if (
-            $value === null
-            || $value === ''
-        ) {
-            return null;
-        }
-
         if ($value instanceof DateTimeImmutable) {
             return $value;
         }
 
-        if (!is_string($value)) {
-            throw new ValidationException(
-                "{$field} must use Y-m-d format."
+        if (
+            !is_string($value)
+            || trim($value) === ''
+        ) {
+            throw new InvalidArgumentException(
+                $label . ' is required.'
             );
         }
+
+        $value = trim($value);
 
         $date =
             DateTimeImmutable::createFromFormat(
                 '!Y-m-d',
-                trim($value)
+                $value
             );
 
         $errors =
@@ -511,47 +479,74 @@ final class SalePayment
                     || $errors['error_count'] > 0
                 )
             )
+            || $date->format('Y-m-d')
+                !== $value
         ) {
-            throw new ValidationException(
-                "{$field} must use Y-m-d format."
+            throw new InvalidArgumentException(
+                $label
+                . ' must be a valid date.'
             );
         }
 
         return $date;
     }
 
-    private function nullableDateTime(
+    private function positiveAmount(
         mixed $value
-    ): ?DateTimeImmutable {
+    ): float {
         if (
             $value === null
             || $value === ''
+            || !is_numeric($value)
         ) {
-            return null;
+            throw new InvalidArgumentException(
+                'Payment amount is required.'
+            );
         }
 
-        if ($value instanceof DateTimeImmutable) {
-            return $value;
+        $amount = round(
+            (float) $value,
+            4
+        );
+
+        if ($amount <= 0) {
+            throw new InvalidArgumentException(
+                'Payment amount must be greater than zero.'
+            );
         }
 
+        return $amount;
+    }
+
+    private function normalizePaymentMethod(
+        mixed $value
+    ): string {
         if (!is_string($value)) {
-            throw new ValidationException(
-                'Invalid date/time value.'
+            throw new InvalidArgumentException(
+                'Payment method is required.'
             );
         }
 
-        $date =
-            DateTimeImmutable::createFromFormat(
-                'Y-m-d H:i:s',
-                trim($value)
-            );
+        $value = strtolower(
+            trim($value)
+        );
 
-        if ($date === false) {
-            throw new ValidationException(
-                'Invalid date/time value.'
+        if ($value === '') {
+            $value = 'cash';
+        }
+
+        if (
+            !in_array(
+                $value,
+                self::paymentMethods(),
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Invalid sale payment method.'
             );
         }
 
-        return $date;
+        return $value;
     }
 }
