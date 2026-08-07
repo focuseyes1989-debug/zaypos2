@@ -5,3 +5,7 @@
 /.vscode/
 Thumbs.db
 .DS_Store
+
+# Runtime product uploads
+/public/uploads/products/*
+!/public/uploads/products/.gitkeep

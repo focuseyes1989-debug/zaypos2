@@ -14,6 +14,7 @@ use App\Controllers\SupplierController;
 use App\Controllers\CustomerController;
 use App\Controllers\WarehouseController;
 use App\Controllers\TaxController;
+use App\Controllers\ProductController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -293,5 +294,40 @@ $router->post('/taxes/delete', [
 
 $router->post('/taxes/restore', [
     TaxController::class,
+    'restore',
+]);
+
+$router->get('/products', [
+    ProductController::class,
+    'index',
+]);
+
+$router->get('/products/create', [
+    ProductController::class,
+    'create',
+]);
+
+$router->post('/products', [
+    ProductController::class,
+    'store',
+]);
+
+$router->get('/products/edit', [
+    ProductController::class,
+    'edit',
+]);
+
+$router->post('/products/update', [
+    ProductController::class,
+    'update',
+]);
+
+$router->post('/products/delete', [
+    ProductController::class,
+    'delete',
+]);
+
+$router->post('/products/restore', [
+    ProductController::class,
     'restore',
 ]);
