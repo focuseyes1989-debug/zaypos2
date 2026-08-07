@@ -141,6 +141,18 @@ use App\Security\Csrf;
         </a>
     <?php endif; ?>
 
+    <?php if (
+        in_array(
+            'inventory.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/inventory')) ?>">
+            Inventory
+        </a>
+    <?php endif; ?>
+
 </nav>
 
     <div class="topbar-user">

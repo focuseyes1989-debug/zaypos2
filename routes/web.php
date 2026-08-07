@@ -15,6 +15,7 @@ use App\Controllers\CustomerController;
 use App\Controllers\WarehouseController;
 use App\Controllers\TaxController;
 use App\Controllers\ProductController;
+use App\Controllers\InventoryController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -330,4 +331,44 @@ $router->post('/products/delete', [
 $router->post('/products/restore', [
     ProductController::class,
     'restore',
+]);
+
+$router->get('/inventory', [
+    InventoryController::class,
+    'index',
+]);
+
+$router->get('/inventory/movements', [
+    InventoryController::class,
+    'movements',
+]);
+
+$router->get('/inventory/opening', [
+    InventoryController::class,
+    'opening',
+]);
+
+$router->post('/inventory/opening', [
+    InventoryController::class,
+    'storeOpening',
+]);
+
+$router->get('/inventory/adjustment', [
+    InventoryController::class,
+    'adjustment',
+]);
+
+$router->post('/inventory/adjustment', [
+    InventoryController::class,
+    'storeAdjustment',
+]);
+
+$router->get('/inventory/transfer', [
+    InventoryController::class,
+    'transfer',
+]);
+
+$router->post('/inventory/transfer', [
+    InventoryController::class,
+    'storeTransfer',
 ]);
