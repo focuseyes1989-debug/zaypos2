@@ -10,6 +10,7 @@ use App\Controllers\HomeController;
 use App\Controllers\RoleController;
 use App\Controllers\UserController;
 use App\Controllers\UnitController;
+use App\Controllers\SupplierController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -149,5 +150,40 @@ $router->post('/units/delete', [
 
 $router->post('/units/restore', [
     UnitController::class,
+    'restore',
+]);
+
+$router->get('/suppliers', [
+    SupplierController::class,
+    'index',
+]);
+
+$router->get('/suppliers/create', [
+    SupplierController::class,
+    'create',
+]);
+
+$router->post('/suppliers', [
+    SupplierController::class,
+    'store',
+]);
+
+$router->get('/suppliers/edit', [
+    SupplierController::class,
+    'edit',
+]);
+
+$router->post('/suppliers/update', [
+    SupplierController::class,
+    'update',
+]);
+
+$router->post('/suppliers/delete', [
+    SupplierController::class,
+    'delete',
+]);
+
+$router->post('/suppliers/restore', [
+    SupplierController::class,
     'restore',
 ]);
