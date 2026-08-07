@@ -12,6 +12,7 @@ use App\Controllers\UserController;
 use App\Controllers\UnitController;
 use App\Controllers\SupplierController;
 use App\Controllers\CustomerController;
+use App\Controllers\WarehouseController;
 use App\Core\Router;
 
 /** @var Router $router */
@@ -221,5 +222,40 @@ $router->post('/customers/delete', [
 
 $router->post('/customers/restore', [
     CustomerController::class,
+    'restore',
+]);
+
+$router->get('/warehouses', [
+    WarehouseController::class,
+    'index',
+]);
+
+$router->get('/warehouses/create', [
+    WarehouseController::class,
+    'create',
+]);
+
+$router->post('/warehouses', [
+    WarehouseController::class,
+    'store',
+]);
+
+$router->get('/warehouses/edit', [
+    WarehouseController::class,
+    'edit',
+]);
+
+$router->post('/warehouses/update', [
+    WarehouseController::class,
+    'update',
+]);
+
+$router->post('/warehouses/delete', [
+    WarehouseController::class,
+    'delete',
+]);
+
+$router->post('/warehouses/restore', [
+    WarehouseController::class,
     'restore',
 ]);

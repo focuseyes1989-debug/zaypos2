@@ -104,7 +104,19 @@ use App\Security\Csrf;
             Customers
         </a>
     <?php endif; ?>    
-        
+
+    <?php if (
+        in_array(
+            'warehouses.view',
+            $currentUser['permissions'] ?? [],
+            true
+        )
+    ): ?>
+        <a href="<?= e(app_url('/warehouses')) ?>">
+            Warehouses
+        </a>
+    <?php endif; ?>
+
     </nav>
 
     <div class="topbar-user">
