@@ -17,6 +17,12 @@ final class Sale extends BaseModel
 
     private ?int $posShiftId = null;
 
+    private bool $isHeld = false;
+
+    private ?DateTimeImmutable $heldAt = null;
+
+    private ?int $heldBy = null;
+
     private string $saleNumber;
 
     private ?string $customerReference = null;
@@ -86,6 +92,20 @@ final class Sale extends BaseModel
 
         $this->posShiftId = $this->nullablePositiveInteger(
             $data['pos_shift_id'] ?? null
+        );
+
+        $this->isHeld =
+            (int) (
+                $data['is_held']
+                ?? 0
+            ) === 1;
+
+        $this->heldAt = $this->nullableDateTime(
+            $data['held_at'] ?? null
+        );
+
+        $this->heldBy = $this->nullablePositiveInteger(
+            $data['held_by'] ?? null
         );
 
         $this->saleNumber = $this->requiredString(
@@ -165,7 +185,10 @@ final class Sale extends BaseModel
             'Balance due'
         );
 
-        if ($this->paidAmount > $this->grandTotal + 0.00005) {
+        if (
+            $this->paidAmount
+            > $this->grandTotal + 0.00005
+        ) {
             throw new InvalidArgumentException(
                 'Paid amount must not exceed grand total.'
             );
@@ -227,6 +250,21 @@ final class Sale extends BaseModel
     public function posShiftId(): ?int
     {
         return $this->posShiftId;
+    }
+
+    public function isHeld(): bool
+    {
+        return $this->isHeld;
+    }
+
+    public function heldAt(): ?DateTimeImmutable
+    {
+        return $this->heldAt;
+    }
+
+    public function heldBy(): ?int
+    {
+        return $this->heldBy;
     }
 
     public function saleNumber(): string
@@ -387,11 +425,24 @@ final class Sale extends BaseModel
             'warehouse_id' => $this->warehouseId,
             'pos_shift_id' => $this->posShiftId,
 
+            'is_held' => $this->isHeld,
+
+            'held_at' => $this->heldAt?->format(
+                'Y-m-d H:i:s'
+            ),
+
+            'held_by' => $this->heldBy,
+
             'sale_number' => $this->saleNumber,
             'customer_reference' => $this->customerReference,
 
-            'sale_date' => $this->saleDate->format('Y-m-d'),
-            'due_date' => $this->dueDate?->format('Y-m-d'),
+            'sale_date' => $this->saleDate->format(
+                'Y-m-d'
+            ),
+
+            'due_date' => $this->dueDate?->format(
+                'Y-m-d'
+            ),
 
             'status' => $this->status,
             'payment_status' => $this->paymentStatus,
@@ -420,7 +471,8 @@ final class Sale extends BaseModel
 
             'cancelled_by' => $this->cancelledBy,
 
-            'cancellation_reason' => $this->cancellationReason,
+            'cancellation_reason' =>
+                $this->cancellationReason,
 
             'created_by' => $this->createdBy,
             'updated_by' => $this->updatedBy,
@@ -476,7 +528,10 @@ final class Sale extends BaseModel
             );
         }
 
-        if (mb_strlen($value) > $maximumLength) {
+        if (
+            mb_strlen($value)
+            > $maximumLength
+        ) {
             throw new InvalidArgumentException(
                 "{$field} must not exceed {$maximumLength} characters."
             );
@@ -489,7 +544,10 @@ final class Sale extends BaseModel
         mixed $value,
         int $maximumLength
     ): ?string {
-        if ($value === null || $value === '') {
+        if (
+            $value === null
+            || $value === ''
+        ) {
             return null;
         }
 
@@ -505,7 +563,10 @@ final class Sale extends BaseModel
             return null;
         }
 
-        if (mb_strlen($value) > $maximumLength) {
+        if (
+            mb_strlen($value)
+            > $maximumLength
+        ) {
             throw new InvalidArgumentException(
                 "Text must not exceed {$maximumLength} characters."
             );
@@ -517,7 +578,10 @@ final class Sale extends BaseModel
     private function nullableText(
         mixed $value
     ): ?string {
-        if ($value === null || $value === '') {
+        if (
+            $value === null
+            || $value === ''
+        ) {
             return null;
         }
 
@@ -554,11 +618,17 @@ final class Sale extends BaseModel
     private function nullableDate(
         mixed $value
     ): ?DateTimeImmutable {
-        if ($value === null || $value === '') {
+        if (
+            $value === null
+            || $value === ''
+        ) {
             return null;
         }
 
-        if ($value instanceof DateTimeImmutable) {
+        if (
+            $value
+            instanceof DateTimeImmutable
+        ) {
             return $value;
         }
 
@@ -570,12 +640,14 @@ final class Sale extends BaseModel
 
         $value = trim($value);
 
-        $date = DateTimeImmutable::createFromFormat(
-            '!Y-m-d',
-            $value
-        );
+        $date =
+            DateTimeImmutable::createFromFormat(
+                '!Y-m-d',
+                $value
+            );
 
-        $errors = DateTimeImmutable::getLastErrors();
+        $errors =
+            DateTimeImmutable::getLastErrors();
 
         if (
             $date === false
@@ -586,7 +658,8 @@ final class Sale extends BaseModel
                     || $errors['error_count'] > 0
                 )
             )
-            || $date->format('Y-m-d') !== $value
+            || $date->format('Y-m-d')
+                !== $value
         ) {
             throw new InvalidArgumentException(
                 'Expected date format Y-m-d.'

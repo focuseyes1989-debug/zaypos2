@@ -701,6 +701,32 @@ $router->get('/pos/receipt', [
     'receipt',
 ]);
 
+/*
+|--------------------------------------------------------------------------
+| POS Hold Sale
+|--------------------------------------------------------------------------
+*/
+
+$router->post('/pos/hold', [
+    PosController::class,
+    'hold',
+]);
+
+$router->get('/pos/held', [
+    PosController::class,
+    'held',
+]);
+
+$router->post('/pos/resume', [
+    PosController::class,
+    'resume',
+]);
+
+$router->post('/pos/held/cancel', [
+    PosController::class,
+    'cancelHeld',
+]);
+
 $router->get('/pos-shifts', [
     PosShiftController::class,
     'index',

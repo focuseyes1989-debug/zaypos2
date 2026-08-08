@@ -23,6 +23,11 @@ final class SaleRepository extends BaseRepository
         'customer_id',
         'warehouse_id',
         'pos_shift_id',
+
+        'is_held',
+        'held_at',
+        'held_by',
+
         'sale_number',
         'customer_reference',
         'sale_date',
@@ -105,7 +110,11 @@ final class SaleRepository extends BaseRepository
         int $perPage = 20,
         bool $onlyDeleted = false
     ): array {
-        $pagination = $this->pagination($page, $perPage);
+        $pagination =
+            $this->pagination(
+                $page,
+                $perPage
+            );
 
         $conditions = [
             '`company_id` = :company_id',
@@ -115,9 +124,10 @@ final class SaleRepository extends BaseRepository
             'company_id' => $companyId,
         ];
 
-        $conditions[] = $onlyDeleted
-            ? '`deleted_at` IS NOT NULL'
-            : '`deleted_at` IS NULL';
+        $conditions[] =
+            $onlyDeleted
+                ? '`deleted_at` IS NOT NULL'
+                : '`deleted_at` IS NULL';
 
         if ($search !== '') {
             $conditions[] = '(
@@ -127,72 +137,198 @@ final class SaleRepository extends BaseRepository
                 OR `cancellation_reason` LIKE :cancellation_reason
             )';
 
-            $searchValue = '%' . $search . '%';
+            $searchValue =
+                '%' . $search . '%';
 
-            $parameters['sale_number'] = $searchValue;
-            $parameters['customer_reference'] = $searchValue;
-            $parameters['notes'] = $searchValue;
-            $parameters['cancellation_reason'] = $searchValue;
+            $parameters['sale_number'] =
+                $searchValue;
+
+            $parameters['customer_reference'] =
+                $searchValue;
+
+            $parameters['notes'] =
+                $searchValue;
+
+            $parameters['cancellation_reason'] =
+                $searchValue;
         }
 
         if (
             in_array(
                 $status,
-                ['draft', 'completed', 'cancelled'],
+                [
+                    'draft',
+                    'completed',
+                    'cancelled',
+                ],
                 true
             )
         ) {
-            $conditions[] = '`status` = :status';
-            $parameters['status'] = $status;
+            $conditions[] =
+                '`status` = :status';
+
+            $parameters['status'] =
+                $status;
         }
 
         if (
             in_array(
                 $paymentStatus,
-                ['unpaid', 'partial', 'paid'],
+                [
+                    'unpaid',
+                    'partial',
+                    'paid',
+                ],
                 true
             )
         ) {
-            $conditions[] = '`payment_status` = :payment_status';
-            $parameters['payment_status'] = $paymentStatus;
+            $conditions[] =
+                '`payment_status` = :payment_status';
+
+            $parameters['payment_status'] =
+                $paymentStatus;
         }
 
         if ($customerId !== null) {
-            $conditions[] = '`customer_id` = :customer_id';
-            $parameters['customer_id'] = $customerId;
+            $conditions[] =
+                '`customer_id` = :customer_id';
+
+            $parameters['customer_id'] =
+                $customerId;
         }
 
         if ($warehouseId !== null) {
-            $conditions[] = '`warehouse_id` = :warehouse_id';
-            $parameters['warehouse_id'] = $warehouseId;
+            $conditions[] =
+                '`warehouse_id` = :warehouse_id';
+
+            $parameters['warehouse_id'] =
+                $warehouseId;
         }
 
-        $where = implode(' AND ', $conditions);
+        $where =
+            implode(
+                ' AND ',
+                $conditions
+            );
 
-        $total = (int) $this->fetchValue(
-            "SELECT COUNT(*)
-             FROM `sales`
-             WHERE {$where}",
-            $parameters
-        );
+        $total =
+            (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM `sales`
+                 WHERE {$where}",
+                $parameters
+            );
 
-        $listParameters = $parameters;
-        $listParameters['limit'] = $pagination['per_page'];
-        $listParameters['offset'] = $pagination['offset'];
+        $listParameters =
+            $parameters;
 
-        $rows = $this->fetchAll(
-            "SELECT {$this->selectColumnList()}
-             FROM `sales`
-             WHERE {$where}
-             ORDER BY
-                `sale_date` DESC,
-                `id` DESC
-             LIMIT :limit OFFSET :offset",
-            $listParameters
-        );
+        $listParameters['limit'] =
+            $pagination['per_page'];
+
+        $listParameters['offset'] =
+            $pagination['offset'];
+
+        $rows =
+            $this->fetchAll(
+                "SELECT {$this->selectColumnList()}
+                 FROM `sales`
+                 WHERE {$where}
+                 ORDER BY
+                    `sale_date` DESC,
+                    `id` DESC
+                 LIMIT :limit OFFSET :offset",
+                $listParameters
+            );
 
         /** @var list<Sale> $items */
-        $items = $this->hydrateMany($rows);
+        $items =
+            $this->hydrateMany(
+                $rows
+            );
+
+        return $this->paginationResult(
+            $items,
+            $total,
+            $pagination['page'],
+            $pagination['per_page']
+        );
+    }
+
+    /**
+     * Paginate held POS draft sales.
+     */
+    public function paginateHeld(
+        int $companyId,
+        int $page = 1,
+        int $perPage = 20,
+        ?int $userId = null
+    ): array {
+        $pagination =
+            $this->pagination(
+                $page,
+                $perPage
+            );
+
+        $conditions = [
+            '`company_id` = :company_id',
+            "`status` = 'draft'",
+            '`is_held` = 1',
+            '`deleted_at` IS NULL',
+        ];
+
+        $parameters = [
+            'company_id' =>
+                $companyId,
+        ];
+
+        if ($userId !== null) {
+            $conditions[] =
+                '`held_by` = :held_by';
+
+            $parameters['held_by'] =
+                $userId;
+        }
+
+        $where =
+            implode(
+                ' AND ',
+                $conditions
+            );
+
+        $total =
+            (int) $this->fetchValue(
+                "SELECT COUNT(*)
+                 FROM `sales`
+                 WHERE {$where}",
+                $parameters
+            );
+
+        $listParameters =
+            $parameters;
+
+        $listParameters['limit'] =
+            $pagination['per_page'];
+
+        $listParameters['offset'] =
+            $pagination['offset'];
+
+        $rows =
+            $this->fetchAll(
+                "SELECT {$this->selectColumnList()}
+                 FROM `sales`
+                 WHERE {$where}
+                 ORDER BY
+                    `held_at` DESC,
+                    `id` DESC
+                 LIMIT :limit OFFSET :offset",
+                $listParameters
+            );
+
+        /** @var list<Sale> $items */
+        $items =
+            $this->hydrateMany(
+                $rows
+            );
 
         return $this->paginationResult(
             $items,
@@ -207,11 +343,12 @@ final class SaleRepository extends BaseRepository
         int $saleId,
         bool $includeDeleted = false
     ): ?Sale {
-        $sale = $this->findById(
-            $companyId,
-            $saleId,
-            $includeDeleted
-        );
+        $sale =
+            $this->findById(
+                $companyId,
+                $saleId,
+                $includeDeleted
+            );
 
         return $sale instanceof Sale
             ? $sale
@@ -222,25 +359,72 @@ final class SaleRepository extends BaseRepository
         int $companyId,
         int $saleId
     ): ?Sale {
-        $row = $this->fetchOne(
-            "SELECT {$this->selectColumnList()}
-             FROM `sales`
-             WHERE `company_id` = :company_id
-               AND `id` = :sale_id
-               AND `deleted_at` IS NULL
-             LIMIT 1
-             FOR UPDATE",
-            [
-                'company_id' => $companyId,
-                'sale_id' => $saleId,
-            ]
-        );
+        $row =
+            $this->fetchOne(
+                "SELECT {$this->selectColumnList()}
+                 FROM `sales`
+                 WHERE `company_id` = :company_id
+                   AND `id` = :sale_id
+                   AND `deleted_at` IS NULL
+                 LIMIT 1
+                 FOR UPDATE",
+                [
+                    'company_id' =>
+                        $companyId,
+
+                    'sale_id' =>
+                        $saleId,
+                ]
+            );
 
         if ($row === null) {
             return null;
         }
 
-        $sale = $this->hydrate($row);
+        $sale =
+            $this->hydrate(
+                $row
+            );
+
+        return $sale instanceof Sale
+            ? $sale
+            : null;
+    }
+
+    /**
+     * Find one held POS draft.
+     */
+    public function findHeld(
+        int $companyId,
+        int $saleId
+    ): ?Sale {
+        $row =
+            $this->fetchOne(
+                "SELECT {$this->selectColumnList()}
+                 FROM `sales`
+                 WHERE `company_id` = :company_id
+                   AND `id` = :sale_id
+                   AND `status` = 'draft'
+                   AND `is_held` = 1
+                   AND `deleted_at` IS NULL
+                 LIMIT 1",
+                [
+                    'company_id' =>
+                        $companyId,
+
+                    'sale_id' =>
+                        $saleId,
+                ]
+            );
+
+        if ($row === null) {
+            return null;
+        }
+
+        $sale =
+            $this->hydrate(
+                $row
+            );
 
         return $sale instanceof Sale
             ? $sale
@@ -258,27 +442,39 @@ final class SaleRepository extends BaseRepository
         ];
 
         if (!$includeDeleted) {
-            $conditions[] = '`deleted_at` IS NULL';
+            $conditions[] =
+                '`deleted_at` IS NULL';
         }
 
-        $where = implode(' AND ', $conditions);
+        $where =
+            implode(
+                ' AND ',
+                $conditions
+            );
 
-        $row = $this->fetchOne(
-            "SELECT {$this->selectColumnList()}
-             FROM `sales`
-             WHERE {$where}
-             LIMIT 1",
-            [
-                'company_id' => $companyId,
-                'sale_number' => $saleNumber,
-            ]
-        );
+        $row =
+            $this->fetchOne(
+                "SELECT {$this->selectColumnList()}
+                 FROM `sales`
+                 WHERE {$where}
+                 LIMIT 1",
+                [
+                    'company_id' =>
+                        $companyId,
+
+                    'sale_number' =>
+                        $saleNumber,
+                ]
+            );
 
         if ($row === null) {
             return null;
         }
 
-        $sale = $this->hydrate($row);
+        $sale =
+            $this->hydrate(
+                $row
+            );
 
         return $sale instanceof Sale
             ? $sale
@@ -298,35 +494,88 @@ final class SaleRepository extends BaseRepository
         );
     }
 
-    public function create(array $data): Sale
-    {
-        $values = $this->onlyAllowedColumns(
-            [
-                'company_id' => $data['company_id'],
-                'customer_id' => $data['customer_id'],
-                'warehouse_id' => $data['warehouse_id'],
-                'pos_shift_id' => $data['pos_shift_id'] ?? null,
-                'sale_number' => $data['sale_number'],
-                'customer_reference' => $data['customer_reference'],
-                'sale_date' => $data['sale_date'],
-                'due_date' => $data['due_date'],
-                'status' => $data['status'],
-                'payment_status' => $data['payment_status'],
-                'subtotal' => $data['subtotal'],
-                'discount_amount' => $data['discount_amount'],
-                'tax_amount' => $data['tax_amount'],
-                'shipping_amount' => $data['shipping_amount'],
-                'other_amount' => $data['other_amount'],
-                'grand_total' => $data['grand_total'],
-                'paid_amount' => $data['paid_amount'],
-                'balance_due' => $data['balance_due'],
-                'notes' => $data['notes'],
-                'created_by' => $data['created_by'],
-                'updated_by' => $data['created_by'],
-            ],
-            $this->createColumns
-        );
+    public function create(
+        array $data
+    ): Sale {
+        $values =
+            $this->onlyAllowedColumns(
+                [
+                    'company_id' =>
+                        $data['company_id'],
 
+                    'customer_id' =>
+                        $data['customer_id'],
+
+                    'warehouse_id' =>
+                        $data['warehouse_id'],
+
+                    'pos_shift_id' =>
+                        $data['pos_shift_id']
+                        ?? null,
+
+                    'sale_number' =>
+                        $data['sale_number'],
+
+                    'customer_reference' =>
+                        $data['customer_reference'],
+
+                    'sale_date' =>
+                        $data['sale_date'],
+
+                    'due_date' =>
+                        $data['due_date'],
+
+                    'status' =>
+                        $data['status'],
+
+                    'payment_status' =>
+                        $data['payment_status'],
+
+                    'subtotal' =>
+                        $data['subtotal'],
+
+                    'discount_amount' =>
+                        $data['discount_amount'],
+
+                    'tax_amount' =>
+                        $data['tax_amount'],
+
+                    'shipping_amount' =>
+                        $data['shipping_amount'],
+
+                    'other_amount' =>
+                        $data['other_amount'],
+
+                    'grand_total' =>
+                        $data['grand_total'],
+
+                    'paid_amount' =>
+                        $data['paid_amount'],
+
+                    'balance_due' =>
+                        $data['balance_due'],
+
+                    'notes' =>
+                        $data['notes'],
+
+                    'created_by' =>
+                        $data['created_by'],
+
+                    'updated_by' =>
+                        $data['created_by'],
+                ],
+                $this->createColumns
+            );
+
+        /*
+         * is_held is intentionally not included here.
+         *
+         * New sales use the database default:
+         *
+         * is_held = 0
+         * held_at = NULL
+         * held_by = NULL
+         */
         $this->execute(
             'INSERT INTO `sales` (
                 `company_id`,
@@ -380,12 +629,16 @@ final class SaleRepository extends BaseRepository
             $values
         );
 
-        $saleId = (int) $this->connection()->lastInsertId();
+        $saleId =
+            (int) $this
+                ->connection()
+                ->lastInsertId();
 
-        $sale = $this->find(
-            (int) $data['company_id'],
-            $saleId
-        );
+        $sale =
+            $this->find(
+                (int) $data['company_id'],
+                $saleId
+            );
 
         if (!$sale instanceof Sale) {
             throw new RuntimeException(
@@ -401,30 +654,73 @@ final class SaleRepository extends BaseRepository
         int $saleId,
         array $data
     ): ?Sale {
-        $values = $this->onlyAllowedColumns(
-            [
-                'customer_id' => $data['customer_id'],
-                'warehouse_id' => $data['warehouse_id'],
-                'customer_reference' => $data['customer_reference'],
-                'sale_date' => $data['sale_date'],
-                'due_date' => $data['due_date'],
-                'subtotal' => $data['subtotal'],
-                'discount_amount' => $data['discount_amount'],
-                'tax_amount' => $data['tax_amount'],
-                'shipping_amount' => $data['shipping_amount'],
-                'other_amount' => $data['other_amount'],
-                'grand_total' => $data['grand_total'],
-                'paid_amount' => $data['paid_amount'],
-                'balance_due' => $data['balance_due'],
-                'payment_status' => $data['payment_status'],
-                'notes' => $data['notes'],
-                'updated_by' => $data['updated_by'],
-            ],
-            $this->updateColumns
-        );
+        $values =
+            $this->onlyAllowedColumns(
+                [
+                    'customer_id' =>
+                        $data['customer_id'],
 
-        $values['company_id'] = $companyId;
-        $values['sale_id'] = $saleId;
+                    'warehouse_id' =>
+                        $data['warehouse_id'],
+
+                    'customer_reference' =>
+                        $data[
+                            'customer_reference'
+                        ],
+
+                    'sale_date' =>
+                        $data['sale_date'],
+
+                    'due_date' =>
+                        $data['due_date'],
+
+                    'subtotal' =>
+                        $data['subtotal'],
+
+                    'discount_amount' =>
+                        $data[
+                            'discount_amount'
+                        ],
+
+                    'tax_amount' =>
+                        $data['tax_amount'],
+
+                    'shipping_amount' =>
+                        $data[
+                            'shipping_amount'
+                        ],
+
+                    'other_amount' =>
+                        $data['other_amount'],
+
+                    'grand_total' =>
+                        $data['grand_total'],
+
+                    'paid_amount' =>
+                        $data['paid_amount'],
+
+                    'balance_due' =>
+                        $data['balance_due'],
+
+                    'payment_status' =>
+                        $data[
+                            'payment_status'
+                        ],
+
+                    'notes' =>
+                        $data['notes'],
+
+                    'updated_by' =>
+                        $data['updated_by'],
+                ],
+                $this->updateColumns
+            );
+
+        $values['company_id'] =
+            $companyId;
+
+        $values['sale_id'] =
+            $saleId;
 
         $this->execute(
             'UPDATE `sales`
@@ -459,6 +755,87 @@ final class SaleRepository extends BaseRepository
         );
     }
 
+    /**
+     * Mark an active draft POS sale as held.
+     */
+    public function holdDraft(
+        int $companyId,
+        int $saleId,
+        int $userId
+    ): ?Sale {
+        $this->execute(
+            "UPDATE `sales`
+             SET
+                `is_held` = 1,
+                `held_at` = UTC_TIMESTAMP(),
+                `held_by` = :held_by,
+                `updated_by` = :updated_by,
+                `updated_at` = UTC_TIMESTAMP()
+             WHERE `id` = :sale_id
+               AND `company_id` = :company_id
+               AND `status` = 'draft'
+               AND `is_held` = 0
+               AND `deleted_at` IS NULL",
+            [
+                'held_by' =>
+                    $userId,
+
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
+            ]
+        );
+
+        return $this->find(
+            $companyId,
+            $saleId
+        );
+    }
+
+    /**
+     * Resume a held POS draft.
+     */
+    public function resumeHeld(
+        int $companyId,
+        int $saleId,
+        int $userId
+    ): ?Sale {
+        $this->execute(
+            "UPDATE `sales`
+             SET
+                `is_held` = 0,
+                `held_at` = NULL,
+                `held_by` = NULL,
+                `updated_by` = :updated_by,
+                `updated_at` = UTC_TIMESTAMP()
+             WHERE `id` = :sale_id
+               AND `company_id` = :company_id
+               AND `status` = 'draft'
+               AND `is_held` = 1
+               AND `deleted_at` IS NULL",
+            [
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
+            ]
+        );
+
+        return $this->find(
+            $companyId,
+            $saleId
+        );
+    }
+
     public function markCompleted(
         int $companyId,
         int $saleId,
@@ -468,23 +845,40 @@ final class SaleRepository extends BaseRepository
             "UPDATE `sales`
              SET
                 `status` = 'completed',
+
+                `is_held` = 0,
+                `held_at` = NULL,
+                `held_by` = NULL,
+
                 `completed_at` = UTC_TIMESTAMP(),
                 `completed_by` = :completed_by,
+
                 `updated_by` = :updated_by,
                 `updated_at` = UTC_TIMESTAMP()
+
              WHERE `id` = :sale_id
                AND `company_id` = :company_id
                AND `status` = 'draft'
                AND `deleted_at` IS NULL",
             [
-                'completed_by' => $userId,
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
+                'completed_by' =>
+                    $userId,
+
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
             ]
         );
 
-        return $this->find($companyId, $saleId);
+        return $this->find(
+            $companyId,
+            $saleId
+        );
     }
 
     public function markCancelled(
@@ -497,25 +891,46 @@ final class SaleRepository extends BaseRepository
             "UPDATE `sales`
              SET
                 `status` = 'cancelled',
+
+                `is_held` = 0,
+                `held_at` = NULL,
+                `held_by` = NULL,
+
                 `cancelled_at` = UTC_TIMESTAMP(),
                 `cancelled_by` = :cancelled_by,
-                `cancellation_reason` = :cancellation_reason,
+
+                `cancellation_reason` =
+                    :cancellation_reason,
+
                 `updated_by` = :updated_by,
                 `updated_at` = UTC_TIMESTAMP()
+
              WHERE `id` = :sale_id
                AND `company_id` = :company_id
                AND `status` = 'draft'
                AND `deleted_at` IS NULL",
             [
-                'cancelled_by' => $userId,
-                'cancellation_reason' => $reason,
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
+                'cancelled_by' =>
+                    $userId,
+
+                'cancellation_reason' =>
+                    $reason,
+
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
             ]
         );
 
-        return $this->find($companyId, $saleId);
+        return $this->find(
+            $companyId,
+            $saleId
+        );
     }
 
     public function updatePayment(
@@ -538,16 +953,30 @@ final class SaleRepository extends BaseRepository
                AND `company_id` = :company_id
                AND `deleted_at` IS NULL',
             [
-                'paid_amount' => $paidAmount,
-                'balance_due' => $balanceDue,
-                'payment_status' => $paymentStatus,
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
+                'paid_amount' =>
+                    $paidAmount,
+
+                'balance_due' =>
+                    $balanceDue,
+
+                'payment_status' =>
+                    $paymentStatus,
+
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
             ]
         );
 
-        return $this->find($companyId, $saleId);
+        return $this->find(
+            $companyId,
+            $saleId
+        );
     }
 
     public function updateTotals(
@@ -583,22 +1012,48 @@ final class SaleRepository extends BaseRepository
                AND `status` = \'draft\'
                AND `deleted_at` IS NULL',
             [
-                'subtotal' => $subtotal,
-                'discount_amount' => $discountAmount,
-                'tax_amount' => $taxAmount,
-                'shipping_amount' => $shippingAmount,
-                'other_amount' => $otherAmount,
-                'grand_total' => $grandTotal,
-                'paid_amount' => $paidAmount,
-                'balance_due' => $balanceDue,
-                'payment_status' => $paymentStatus,
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
+                'subtotal' =>
+                    $subtotal,
+
+                'discount_amount' =>
+                    $discountAmount,
+
+                'tax_amount' =>
+                    $taxAmount,
+
+                'shipping_amount' =>
+                    $shippingAmount,
+
+                'other_amount' =>
+                    $otherAmount,
+
+                'grand_total' =>
+                    $grandTotal,
+
+                'paid_amount' =>
+                    $paidAmount,
+
+                'balance_due' =>
+                    $balanceDue,
+
+                'payment_status' =>
+                    $paymentStatus,
+
+                'updated_by' =>
+                    $userId,
+
+                'sale_id' =>
+                    $saleId,
+
+                'company_id' =>
+                    $companyId,
             ]
         );
 
-        return $this->find($companyId, $saleId);
+        return $this->find(
+            $companyId,
+            $saleId
+        );
     }
 
     public function assignPosShift(
@@ -618,10 +1073,17 @@ final class SaleRepository extends BaseRepository
                AND `status` = \'draft\'
                AND `deleted_at` IS NULL',
             [
-                'pos_shift_id' => $posShiftId,
-                'updated_by' => $userId,
-                'company_id' => $companyId,
-                'sale_id' => $saleId,
+                'pos_shift_id' =>
+                    $posShiftId,
+
+                'updated_by' =>
+                    $userId,
+
+                'company_id' =>
+                    $companyId,
+
+                'sale_id' =>
+                    $saleId,
             ]
         );
 
@@ -636,26 +1098,41 @@ final class SaleRepository extends BaseRepository
         int $saleId,
         int $userId
     ): bool {
-        $statement = $this->execute(
-            "UPDATE `sales`
-             SET
-                `deleted_at` = UTC_TIMESTAMP(),
-                `deleted_by` = :deleted_by,
-                `updated_by` = :updated_by,
-                `updated_at` = UTC_TIMESTAMP()
-             WHERE `id` = :sale_id
-               AND `company_id` = :company_id
-               AND `status` = 'draft'
-               AND `deleted_at` IS NULL",
-            [
-                'deleted_by' => $userId,
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
-            ]
-        );
+        $statement =
+            $this->execute(
+                "UPDATE `sales`
+                 SET
+                    `deleted_at` = UTC_TIMESTAMP(),
+                    `deleted_by` = :deleted_by,
 
-        return $statement->rowCount() > 0;
+                    `is_held` = 0,
+                    `held_at` = NULL,
+                    `held_by` = NULL,
+
+                    `updated_by` = :updated_by,
+                    `updated_at` = UTC_TIMESTAMP()
+
+                 WHERE `id` = :sale_id
+                   AND `company_id` = :company_id
+                   AND `status` = 'draft'
+                   AND `deleted_at` IS NULL",
+                [
+                    'deleted_by' =>
+                        $userId,
+
+                    'updated_by' =>
+                        $userId,
+
+                    'sale_id' =>
+                        $saleId,
+
+                    'company_id' =>
+                        $companyId,
+                ]
+            );
+
+        return $statement
+            ->rowCount() > 0;
     }
 
     public function restoreDeleted(
@@ -663,23 +1140,36 @@ final class SaleRepository extends BaseRepository
         int $saleId,
         int $userId
     ): bool {
-        $statement = $this->execute(
-            'UPDATE `sales`
-             SET
-                `deleted_at` = NULL,
-                `deleted_by` = NULL,
-                `updated_by` = :updated_by,
-                `updated_at` = UTC_TIMESTAMP()
-             WHERE `id` = :sale_id
-               AND `company_id` = :company_id
-               AND `deleted_at` IS NOT NULL',
-            [
-                'updated_by' => $userId,
-                'sale_id' => $saleId,
-                'company_id' => $companyId,
-            ]
-        );
+        $statement =
+            $this->execute(
+                'UPDATE `sales`
+                 SET
+                    `deleted_at` = NULL,
+                    `deleted_by` = NULL,
 
-        return $statement->rowCount() > 0;
+                    `is_held` = 0,
+                    `held_at` = NULL,
+                    `held_by` = NULL,
+
+                    `updated_by` = :updated_by,
+                    `updated_at` = UTC_TIMESTAMP()
+
+                 WHERE `id` = :sale_id
+                   AND `company_id` = :company_id
+                   AND `deleted_at` IS NOT NULL',
+                [
+                    'updated_by' =>
+                        $userId,
+
+                    'sale_id' =>
+                        $saleId,
+
+                    'company_id' =>
+                        $companyId,
+                ]
+            );
+
+        return $statement
+            ->rowCount() > 0;
     }
 }

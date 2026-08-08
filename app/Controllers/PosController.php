@@ -829,6 +829,238 @@ final class PosController extends BaseAdminController
         }
     }
 
+/**
+ * Hold the current POS draft sale.
+ */
+public function hold(): void
+{
+    $currentUser =
+        $this->requirePermission(
+            'pos_hold.hold'
+        );
+
+    $this->verifyCsrf();
+
+    $saleId =
+        $this->requiredInteger(
+            $_POST['sale_id']
+                ?? null,
+            'Sale'
+        );
+
+    try {
+        $sale =
+            $this->service->holdSale(
+                (int) $currentUser[
+                    'company_id'
+                ],
+                $saleId,
+                (int) $currentUser['id']
+            );
+
+        flash(
+            'success',
+            'Sale '
+            . $sale->saleNumber()
+            . ' has been held.'
+        );
+
+        redirect('/pos');
+    } catch (Throwable $exception) {
+        flash(
+            'error',
+            $exception->getMessage()
+        );
+
+        redirect(
+            '/pos?sale_id='
+            . $saleId
+        );
+    }
+}
+
+/**
+ * List held POS sales.
+ */
+public function held(): void
+{
+    $currentUser =
+        $this->requirePermission(
+            'pos_hold.view'
+        );
+
+    $companyId =
+        (int) $currentUser[
+            'company_id'
+        ];
+
+    $page =
+        $this->nullableInteger(
+            $_GET['page']
+                ?? null
+        )
+        ?? 1;
+
+    $mineOnly =
+        filter_var(
+            $_GET['mine']
+                ?? false,
+            FILTER_VALIDATE_BOOL
+        );
+
+    try {
+        $result =
+            $this->service->heldSales(
+                $companyId,
+                $page,
+                20,
+                $mineOnly
+                    ? (int) $currentUser['id']
+                    : null
+            );
+
+        View::render(
+            'pos.held',
+            [
+                'currentUser' =>
+                    $currentUser,
+
+                'result' =>
+                    $result,
+
+                'items' =>
+                    $result['items'],
+
+                'mineOnly' =>
+                    $mineOnly,
+
+                'success' =>
+                    flash('success'),
+
+                'error' =>
+                    flash('error'),
+            ]
+        );
+    } catch (Throwable $exception) {
+        flash(
+            'error',
+            $exception->getMessage()
+        );
+
+        redirect('/pos');
+    }
+}
+
+/**
+ * Resume one held POS sale.
+ */
+public function resume(): void
+{
+    $currentUser =
+        $this->requirePermission(
+            'pos_hold.resume'
+        );
+
+    $this->verifyCsrf();
+
+    $saleId =
+        $this->requiredInteger(
+            $_POST['sale_id']
+                ?? null,
+            'Sale'
+        );
+
+    try {
+        $sale =
+            $this->service->resumeSale(
+                (int) $currentUser[
+                    'company_id'
+                ],
+                $saleId,
+                (int) $currentUser['id']
+            );
+
+        flash(
+            'success',
+            'Held sale resumed.'
+        );
+
+        redirect(
+            '/pos?sale_id='
+            . $sale->id()
+        );
+    } catch (Throwable $exception) {
+        flash(
+            'error',
+            $exception->getMessage()
+        );
+
+        redirect('/pos/held');
+    }
+}
+
+/**
+ * Cancel one held POS sale.
+ */
+public function cancelHeld(): void
+{
+    $currentUser =
+        $this->requirePermission(
+            'pos_hold.cancel'
+        );
+
+    $this->verifyCsrf();
+
+    $saleId =
+        $this->requiredInteger(
+            $_POST['sale_id']
+                ?? null,
+            'Sale'
+        );
+
+    try {
+        $sale =
+            $this->service->cart(
+                (int) $currentUser[
+                    'company_id'
+                ],
+                $saleId
+            )['sale'];
+
+        if (
+            !$sale instanceof Sale
+            || !$sale->isHeld()
+        ) {
+            throw new ValidationException(
+                'Held POS sale not found.'
+            );
+        }
+
+        $saleService =
+            new \App\Services\SaleService();
+
+        $saleService->cancel(
+            (int) $currentUser[
+                'company_id'
+            ],
+            $saleId,
+            (int) $currentUser['id'],
+            'Cancelled from held POS sales'
+        );
+
+        flash(
+            'success',
+            'Held sale cancelled.'
+        );
+    } catch (Throwable $exception) {
+        flash(
+            'error',
+            $exception->getMessage()
+        );
+    }
+
+    redirect('/pos/held');
+}
     /**
      * POS receipt.
      */
