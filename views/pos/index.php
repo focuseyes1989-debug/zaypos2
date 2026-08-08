@@ -76,6 +76,15 @@ $balanceDue =
             flex-wrap: wrap;
         }
 
+        .pos-heading-actions form {
+            margin: 0;
+        }
+
+        .pos-hold-button {
+            min-height: 38px;
+            white-space: nowrap;
+        }
+
         .pos-layout {
             display: grid;
             grid-template-columns:
@@ -427,7 +436,51 @@ require BASE_PATH
         </div>
 
         <div class="pos-heading-actions">
+
+            <a
+                class="secondary-link"
+                href="<?= e(
+                    app_url('/pos/held')
+                ) ?>"
+            >
+                Held Sales
+            </a>
+
+            <?php if (
+                $sale instanceof Sale
+                && $sale->isDraft()
+                && !$sale->isHeld()
+            ): ?>
+
+                <form
+                    method="post"
+                    action="<?= e(
+                        app_url('/pos/hold')
+                    ) ?>"
+                    onsubmit="return confirm(
+                        'Hold this POS sale?'
+                    );"
+                >
+                    <?= Csrf::input() ?>
+
+                    <input
+                        type="hidden"
+                        name="sale_id"
+                        value="<?= (int) $sale->id() ?>"
+                    >
+
+                    <button
+                        class="secondary-button pos-hold-button"
+                        type="submit"
+                    >
+                        Hold Sale
+                    </button>
+                </form>
+
+            <?php endif; ?>
+
             <?php if ($sale instanceof Sale): ?>
+
                 <a
                     class="secondary-link"
                     href="<?= e(
@@ -448,7 +501,9 @@ require BASE_PATH
                 >
                     New Sale
                 </a>
+
             <?php endif; ?>
+
         </div>
     </section>
 

@@ -226,6 +226,184 @@ final class SaleService
     }
 
     /**
+     * Return held POS draft sales.
+     *
+     * @return array{
+     *     items: list<Sale>,
+     *     total: int,
+     *     page: int,
+     *     per_page: int,
+     *     last_page: int
+     * }
+     */
+    public function heldSales(
+        int $companyId,
+        int $page = 1,
+        int $perPage = 20,
+        ?int $userId = null
+    ): array {
+        $this->validatePositiveId($companyId, 'Company ID');
+
+        if ($userId !== null) {
+            $this->validatePositiveId($userId, 'User ID');
+        }
+
+        $page = max(1, $page);
+        $perPage = max(1, min(100, $perPage));
+
+        return $this->saleRepository->paginateHeld(
+            $companyId,
+            $page,
+            $perPage,
+            $userId
+        );
+    }
+
+    /**
+     * Hold an active POS draft sale.
+     */
+    public function holdPosSale(
+        int $companyId,
+        int $saleId,
+        int $userId
+    ): Sale {
+        $this->validatePositiveId($companyId, 'Company ID');
+        $this->validatePositiveId($saleId, 'Sale ID');
+        $this->validatePositiveId($userId, 'User ID');
+
+        $sale = $this->find($companyId, $saleId);
+
+        if (!$sale->isDraft()) {
+            throw new ValidationException(
+                'Only draft POS sales can be held.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'This POS sale is already held.'
+            );
+        }
+
+        if ($sale->posShiftId() === null) {
+            throw new ValidationException(
+                'Only POS shift sales can be held.'
+            );
+        }
+
+        $held = $this->saleRepository->holdDraft(
+            $companyId,
+            $saleId,
+            $userId
+        );
+
+        if (!$held instanceof Sale || !$held->isHeld()) {
+            throw new ValidationException(
+                'POS sale could not be held.'
+            );
+        }
+
+        $this->audit->record(
+            'sales.pos_held',
+            'sale',
+            $saleId,
+            [
+                'before' => $sale->toArray(),
+                'after' => $held->toArray(),
+            ]
+        );
+
+        return $held;
+    }
+
+    /**
+     * Resume a held POS draft and attach it to the current POS shift.
+     */
+    public function resumeHeldPosSale(
+        int $companyId,
+        int $saleId,
+        int $userId,
+        int $posShiftId
+    ): Sale {
+        $this->validatePositiveId($companyId, 'Company ID');
+        $this->validatePositiveId($saleId, 'Sale ID');
+        $this->validatePositiveId($userId, 'User ID');
+        $this->validatePositiveId($posShiftId, 'POS shift ID');
+
+        $database = Database::connection();
+
+        try {
+            $this->beginTransaction($database);
+
+            $sale = $this->saleRepository->findForUpdate(
+                $companyId,
+                $saleId
+            );
+
+            if (!$sale instanceof Sale) {
+                throw new ValidationException(
+                    'Held POS sale not found.'
+                );
+            }
+
+            if (!$sale->isDraft()) {
+                throw new ValidationException(
+                    'Only draft POS sales can be resumed.'
+                );
+            }
+
+            if (!$sale->isHeld()) {
+                throw new ValidationException(
+                    'This POS sale is not held.'
+                );
+            }
+
+            $resumed = $this->saleRepository->resumeHeld(
+                $companyId,
+                $saleId,
+                $userId
+            );
+
+            if (!$resumed instanceof Sale || $resumed->isHeld()) {
+                throw new ValidationException(
+                    'Held POS sale could not be resumed.'
+                );
+            }
+
+            $resumed = $this->saleRepository->assignPosShift(
+                $companyId,
+                $saleId,
+                $posShiftId,
+                $userId
+            );
+
+            if (!$resumed instanceof Sale) {
+                throw new ValidationException(
+                    'POS shift could not be assigned to the resumed sale.'
+                );
+            }
+
+            $database->commit();
+        } catch (Throwable $exception) {
+            $this->rollbackIfNeeded($database);
+            throw $exception;
+        }
+
+        $this->audit->record(
+            'sales.pos_resumed',
+            'sale',
+            $saleId,
+            [
+                'before' => $sale->toArray(),
+                'after' => $resumed->toArray(),
+                'pos_shift_id' => $posShiftId,
+            ]
+        );
+
+        return $resumed;
+    }
+
+    /**
      * Create an empty draft sale.
      *
      * Customer is optional so walk-in sales are supported.
@@ -409,6 +587,12 @@ final class SaleService
             );
         }
 
+        if ($existing->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before they can be updated.'
+            );
+        }
+
         $customerId = array_key_exists(
             'customer_id',
             $input
@@ -583,6 +767,12 @@ final class SaleService
             );
         }
 
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before items can be added.'
+            );
+        }
+
         $data = $this->validateItem(
             $companyId,
             $input
@@ -645,6 +835,12 @@ final class SaleService
         if (!$sale->isDraft()) {
             throw new ValidationException(
                 'Items can only be updated on draft sales.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before items can be updated.'
             );
         }
 
@@ -730,6 +926,12 @@ final class SaleService
             );
         }
 
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before items can be removed.'
+            );
+        }
+
         $item = $this->itemRepository->find(
             $itemId
         );
@@ -799,6 +1001,12 @@ final class SaleService
             if (!$sale->isDraft()) {
                 throw new ValidationException(
                     'Only draft sales can be completed.'
+                );
+            }
+
+            if ($sale->isHeld()) {
+                throw new ValidationException(
+                    'Held POS sales must be resumed before completion.'
                 );
             }
 
@@ -1190,6 +1398,12 @@ final class SaleService
         if (!$sale->isDraft()) {
             throw new ValidationException(
                 'Sale totals can only be recalculated while draft.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before totals are recalculated.'
             );
         }
 

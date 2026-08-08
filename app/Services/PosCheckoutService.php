@@ -144,6 +144,98 @@ final class PosCheckoutService
     }
 
     /**
+     * Hold the current POS sale.
+     */
+    public function holdSale(
+        int $companyId,
+        int $saleId,
+        int $userId
+    ): Sale {
+        $this->positiveId($companyId, 'Company ID');
+        $this->positiveId($saleId, 'Sale ID');
+        $this->positiveId($userId, 'User ID');
+
+        return $this->saleService->holdPosSale(
+            $companyId,
+            $saleId,
+            $userId
+        );
+    }
+
+    /**
+     * Resume a held sale into the cashier's current open POS shift.
+     */
+    public function resumeSale(
+        int $companyId,
+        int $saleId,
+        int $userId
+    ): Sale {
+        $this->positiveId($companyId, 'Company ID');
+        $this->positiveId($saleId, 'Sale ID');
+        $this->positiveId($userId, 'User ID');
+
+        $shift = $this->shiftService->currentShift(
+            $companyId,
+            $userId
+        );
+
+        if ($shift === null) {
+            throw new ValidationException(
+                'An open POS shift is required before resuming a held sale.'
+            );
+        }
+
+        if (!$shift->isOpen()) {
+            throw new ValidationException(
+                'The current POS shift is not open.'
+            );
+        }
+
+        $sale = $this->saleService->find(
+            $companyId,
+            $saleId
+        );
+
+        if (!$sale->isHeld()) {
+            throw new ValidationException(
+                'This POS sale is not held.'
+            );
+        }
+
+        if ($sale->warehouseId() !== $shift->warehouseId()) {
+            throw new ValidationException(
+                'The held sale warehouse must match the current POS shift warehouse.'
+            );
+        }
+
+        return $this->saleService->resumeHeldPosSale(
+            $companyId,
+            $saleId,
+            $userId,
+            (int) $shift->id()
+        );
+    }
+
+    /**
+     * Return held POS sales.
+     *
+     * @return array<string, mixed>
+     */
+    public function heldSales(
+        int $companyId,
+        int $page = 1,
+        int $perPage = 20,
+        ?int $userId = null
+    ): array {
+        return $this->saleService->heldSales(
+            $companyId,
+            $page,
+            $perPage,
+            $userId
+        );
+    }
+
+    /**
      * Find a sellable product using barcode.
      *
      * @return array<string, mixed>
@@ -395,6 +487,18 @@ final class PosCheckoutService
         if (!$sale->isDraft()) {
             throw new ValidationException(
                 'Only draft POS sales can be changed.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before they can be changed.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before they can be changed.'
             );
         }
 
@@ -859,6 +963,12 @@ final class PosCheckoutService
         if (!$sale->isDraft()) {
             throw new ValidationException(
                 'Only draft POS sales can be checked out.'
+            );
+        }
+
+        if ($sale->isHeld()) {
+            throw new ValidationException(
+                'Held POS sales must be resumed before checkout.'
             );
         }
 
